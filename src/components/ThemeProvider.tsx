@@ -1,4 +1,5 @@
 import { createContext, useContext, ReactNode } from 'react';
+import { blue } from 'react-native-reanimated/lib/typescript/Colors';
 
 export const theme = {
   colors: {
@@ -8,6 +9,7 @@ export const theme = {
     border: '#E0E0E0',
     error: '#F44336',
     success: '#4CAF50',
+    blue: '#2196F3',
   },
   fontSizes: {
     small: 12,

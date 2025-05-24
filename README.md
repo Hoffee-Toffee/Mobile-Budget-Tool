@@ -95,3 +95,65 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+## Migration Checklist: Web React Budget Tool → React Native Version
+
+This checklist covers all major features, components, and utilities from the original web React version that should be implemented or adapted in your React Native version. Items already completed in your codebase are checked off.
+
+### Core App Structure
+
+- [x] **App entry point** (`App.tsx`)
+- [x] **Theme provider/context** (`ThemeProvider`, `theme`, `useTheme`)
+- [x] **BudgetTool main component**
+- [x] **Local state for title, theme, etc.**
+- [x] **Persistent storage for budget data** (AsyncStorage)
+- [x] **Loading indicator when data is not ready**
+
+### Components
+
+- [x] **Input component** (custom, in `Shared/Input.tsx`)
+- [x] **Button component** (custom, in `Shared/Button.tsx`)
+- [ ] Section headers (e.g., Income, Important, Voluntary)
+- [ ] Expand/collapse for budget items (if needed)
+- [ ] Editable item rows (name, value, etc.)
+- [ ] Add/delete item buttons
+- [ ] Dark mode toggle (UI control)
+- [ ] Currency selector (if supporting multiple currencies)
+
+### Utilities / Functions
+
+- [x] **Currency formatting** (`formatCurrency` in `utils/formatters.ts`)
+- [x] **Summary calculation** (`calculateSummary` in `utils/calculations.ts`)
+- [ ] Calculation for each item (if supporting formulas/expressions)
+- [ ] Copy/share/export/import budget data
+- [ ] Print/PDF export (if needed for mobile)
+
+### State & Data
+
+- [x] **useBudgetData custom hook** (with AsyncStorage)
+- [x] **Initial data structure** (settings, income, important, voluntary)
+- [x] **Sync local state with loaded data**
+- [ ] Save changes to AsyncStorage on edit
+- [ ] Support for expanded/collapsed state per item (if needed)
+
+### UI/UX
+
+- [x] **Loading state**
+- [ ] Responsive layout for different device sizes
+- [ ] Accessibility (labels, roles, etc.)
+- [ ] Error handling and user feedback
+
+### Other Features (from original web version)
+
+- [ ] Print styles (not directly applicable, but consider share/export)
+- [ ] Keyboard shortcuts (if needed)
+- [ ] Tooltips/help text
+
+---
+
+**Legend:**
+
+- [x] = Already implemented in your React Native codebase
+- [ ] = Still to be implemented or adapted
+
+Update this checklist as you migrate or add features!

@@ -1,14 +1,25 @@
 import React from 'react';
-import { SafeAreaView } from 'react-native';
-import BudgetTool from './components/BudgetTool';
-import { ThemeProvider } from './styles/Theme';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { ThemeProvider } from './components/ThemeProvider';
+import MainScreen from './components/MainScreen';
+import { Provider } from 'react-native-paper';
+import useBudgetData from './hooks/useBudgetData';
+import { BudgetContext } from './context/BudgetContext';
 
 const App = () => {
+  const { budgetData, setBudgetData } = useBudgetData();
+
   return (
     <ThemeProvider>
-      <SafeAreaView style={{ flex: 1 }}>
-        <BudgetTool />
-      </SafeAreaView>
+      <Provider>
+        <SafeAreaProvider>
+          <BudgetContext.Provider value={{ budgetData, setBudgetData }}>
+            <SafeAreaView style={{ flex: 1 }} edges={['top', 'right', 'bottom', 'left']}>
+              <MainScreen />
+            </SafeAreaView>
+          </BudgetContext.Provider>
+        </SafeAreaProvider>
+      </Provider>
     </ThemeProvider>
   );
 };
