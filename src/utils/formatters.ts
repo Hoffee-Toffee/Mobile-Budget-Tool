@@ -10,10 +10,20 @@ export const formatCurrency = (value: number): string => {
     return value.toString();
   }
   const [locale, currencyCode] = currency.split('/');
+
+  // Determine fraction digits: 0 if no significant decimals, 2 if there are
+  let minimumFractionDigits = 0;
+
+  const abs = Math.abs(value);
+  if (abs !== Math.floor(abs)) {
+    const twoDigits = Math.round((abs % 1) * 100);
+    if (twoDigits) minimumFractionDigits = 2;
+  }
+
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currencyCode,
-    minimumFractionDigits: 2,
+    minimumFractionDigits,
     maximumFractionDigits: 2,
   }).format(value);
 };

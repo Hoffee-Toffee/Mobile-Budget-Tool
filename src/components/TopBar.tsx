@@ -83,7 +83,7 @@ const TopBar = () => {
         <View style={styles.titleInput}>
           <Input
             value={titleText}
-            placeholder="Enter budget title"
+            placeholder="Budget Title"
             onChangeText={setTitleText}
             onBlur={() => {
               saveSetting('title', titleText);
