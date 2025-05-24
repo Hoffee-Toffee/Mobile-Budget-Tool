@@ -1,21 +1,25 @@
 import React from 'react';
-import { TextInput, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { TextInput } from 'react-native-paper';
 
 interface InputProps {
   value: string;
   placeholder: string;
   onChangeText: (text: string) => void;
+  onBlur?: () => void;
 }
 
-const Input: React.FC<InputProps> = ({ value, placeholder, onChangeText }) => {
+const Input: React.FC<InputProps> = ({ value, placeholder, onChangeText, onBlur }) => {
   return (
     <View style={styles.container}>
       <TextInput
-        style={styles.input}
+        mode="outlined"
         value={value}
-        placeholder={placeholder}
+        label={placeholder}
         onChangeText={onChangeText}
-        placeholderTextColor="#888"
+        onBlur={onBlur}
+        style={styles.input}
+        theme={{ colors: { placeholder: '#888' } }}
       />
     </View>
   );
@@ -26,12 +30,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    fontSize: 16,
+    backgroundColor: 'white',
   },
 });
 

@@ -17,28 +17,6 @@ const MainScreen = () => {
     );
   }
 
-  // useEffect(() => {
-  //   setBudgetData((prevData) => {
-  //     if (!prevData || !prevData.settings) return prevData;
-  //     const newTheme = isDarkMode ? 'dark' : 'light';
-  //     // Only update if values have changed
-  //     if (
-  //       prevData.settings.title === budgetTitle &&
-  //       prevData.settings.theme === newTheme
-  //     ) {
-  //       return prevData;
-  //     }
-  //     return {
-  //       ...prevData,
-  //       settings: {
-  //         ...prevData.settings,
-  //         title: budgetTitle,
-  //         theme: newTheme,
-  //       },
-  //     };
-  //   });
-  // }, [budgetTitle, isDarkMode, setBudgetData]);
-
   const backgroundColor = theme.colors.background;
 
   return (

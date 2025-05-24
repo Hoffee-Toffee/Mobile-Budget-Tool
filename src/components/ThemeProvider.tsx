@@ -1,5 +1,4 @@
 import { createContext, useContext, ReactNode } from 'react';
-import { blue } from 'react-native-reanimated/lib/typescript/Colors';
 
 export const theme = {
   colors: {

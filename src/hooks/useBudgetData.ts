@@ -83,31 +83,39 @@ const initialData: BudgetData = {
 };
 
 const useBudgetData = () => {
-  const [budgetData, setBudgetData] = useState<BudgetData | null>(null);
+  const [budgetData, initBudgetData] = useState<BudgetData | null>(null);
+  const toSave = useRef(false);
 
-  // const loadedRef = useRef(false);
+  const setBudgetData = (data: BudgetData) => {
+    toSave.current = true;
+    initBudgetData(data);
+  };
 
   useEffect(() => {
-    // if (loadedRef.current) return;
-
     const loadBudgetData = async () => {
       try {
         const savedData = await AsyncStorage.getItem('budgetData');
         if (savedData) {
-          setBudgetData(JSON.parse(savedData));
+          initBudgetData(JSON.parse(savedData));
         } else {
-          setBudgetData(initialData);
+          initBudgetData(initialData);
         }
       } catch (error) {
         console.error('Failed to load budget data:', error);
         setBudgetData(initialData);
-      } finally {
-        loadedRef.current = true;
       }
     };
 
     loadBudgetData();
   }, []);
+
+  useEffect(() => {
+    if (budgetData && toSave.current) {
+      saveBudgetData(budgetData);
+      console.error('Budget data saved');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [budgetData]);
 
   const saveBudgetData = async (data: BudgetData) => {
     try {
