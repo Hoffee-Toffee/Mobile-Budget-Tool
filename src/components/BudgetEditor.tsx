@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   totalValue: {
     flex: 2,
     alignItems: 'flex-start',
-    justifyContent: 'center',
+    flexDirection: 'row',
   },
   totalValueText: {
     fontWeight: 'bold',
@@ -108,6 +108,14 @@ const BudgetEditor = () => {
       )
     );
 
+  // Helper to get raw total (number) for calculations
+  const sectionRawTotal = (items) =>
+    items.filter(item => item.active).reduce(
+      (total, item) =>
+        total + (processCalculation(item).res || 0),
+      0
+    );
+
   const addItem = (section, items) => {
     const newItem = {
       name: `Item ${items.length + 1}`,
@@ -119,11 +127,27 @@ const BudgetEditor = () => {
       ...prevData,
       [section]: [...(prevData[section] || []), newItem],
     }));
-  }
+  };
+
+  // Find sections by name (case-insensitive)
+  const getSection = (name) =>
+    sections.find(([section]) => section.toLowerCase() === name.toLowerCase());
+
+  // Get totals for Income, Important, Voluntary
+  const incomeSection = getSection('income');
+  const importantSection = getSection('important');
+  const voluntarySection = getSection('voluntary');
+
+  const incomeTotal = incomeSection ? sectionRawTotal(incomeSection[1]) : 0;
+  const importantTotal = importantSection ? sectionRawTotal(importantSection[1]) : 0;
+  const voluntaryTotal = voluntarySection ? sectionRawTotal(voluntarySection[1]) : 0;
+
+  const leftover = incomeTotal - importantTotal;
+  const finalLeftover = incomeTotal - importantTotal - voluntaryTotal;
 
   return (
     <ScrollView>
-      {sections.map(([section, items]) =>
+      {sections.map(([section, items], idx) => (
         <View key={section} style={styles.section}>
           <Text style={styles.sectionTitle}>{capitalize(section)}</Text>
           {/* Table Header */}
@@ -161,14 +185,32 @@ const BudgetEditor = () => {
             {/* Total value left-aligned and green */}
             <View style={styles.totalValue}>
               <Text style={styles.totalValueText}>
-                {sectionTotal(items)}
+                {sectionTotal(items)}pw
               </Text>
             </View>
             {/* Empty options cell */}
             <View style={styles.emptyOptions} />
           </View>
+          {/* After Income section, add nothing */}
+          {section.toLowerCase() === 'income' && <></>}
+          {/* After Important section, show (Leftover: $???) */}
+          {section.toLowerCase() === 'important' && (
+            <View style={{ marginTop: 4, marginBottom: 12 }}>
+              <Text style={{ fontWeight: 'bold' }}>
+                (Leftover: {formatCurrency(leftover)}pw)
+              </Text>
+            </View>
+          )}
+          {/* After Voluntary section, show (Final Leftover: $???) */}
+          {section.toLowerCase() === 'voluntary' && (
+            <View style={{ marginTop: 4, marginBottom: 12 }}>
+              <Text style={{ fontWeight: 'bold' }}>
+                (Final Leftover: {formatCurrency(finalLeftover)}pw)
+              </Text>
+            </View>
+          )}
         </View>
-      )}
+      ))}
     </ScrollView>
   );
 };
