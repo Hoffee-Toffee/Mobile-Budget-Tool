@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { theme } from './ThemeProvider';
+import { useTheme } from './ThemeProvider';
 import ItemEditor from './ItemEditor';
 import { capitalize, formatCurrency } from '../utils/formatters';
 import { processCalculation } from '../utils/calculations';
@@ -7,88 +7,9 @@ import { useContext } from 'react';
 import { BudgetContext } from '../context/BudgetContext';
 import { Button } from 'react-native-paper';
 
-// Styles object
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: theme.fontSizes.large,
-    marginBottom: 8,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    paddingBottom: 4,
-    marginBottom: 4,
-  },
-  headerItem: {
-    flex: 5,
-    fontWeight: 'bold',
-  },
-  headerActiveContainer: {
-    flex: 1.25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    display: 'flex',
-  },
-  headerActive: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  headerCalculation: {
-    flex: 2,
-    fontWeight: 'bold',
-  },
-  headerOptions: {
-    flex: 1,
-    fontWeight: 'bold',
-  },
-  tableFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addItem: {
-    flex: 5,
-  },
-  addItemButton: {
-    borderRadius: 5,
-  },
-  addItemContent: {
-    alignSelf: 'flex-start',
-  },
-  totalLabel: {
-    flex: 1.25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  totalLabelText: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  totalValue: {
-    flex: 2,
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-  },
-  totalValueText: {
-    fontWeight: 'bold',
-    color: 'green',
-  },
-  emptyOptions: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
-
 const BudgetEditor = () => {
   const { budgetData, setBudgetData } = useContext(BudgetContext);
+  const theme = useTheme();
 
   if (!budgetData) {
     return (
@@ -145,18 +66,101 @@ const BudgetEditor = () => {
   const leftover = incomeTotal - importantTotal;
   const finalLeftover = incomeTotal - importantTotal - voluntaryTotal;
 
+  console.log(theme)
+
+  // Styles object
+  const styles = {
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: theme.fontSizes.large,
+      marginBottom: 8,
+    },
+    tableHeader: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderColor: '#ccc',
+      paddingBottom: 4,
+      marginBottom: 4,
+    },
+    headerItem: {
+      flex: 5,
+      fontWeight: 'bold',
+    },
+    headerActiveContainer: {
+      flex: 1.25,
+      alignItems: 'center',
+      justifyContent: 'center',
+      display: 'flex',
+    },
+    headerActive: {
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    headerCalculation: {
+      flex: 2,
+      fontWeight: 'bold',
+    },
+    headerOptions: {
+      flex: 1,
+      fontWeight: 'bold',
+    },
+    tableFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    addItem: {
+      flex: 5,
+    },
+    addItemButton: {
+      borderRadius: 5,
+    },
+    addItemContent: {
+      alignSelf: 'flex-start',
+    },
+    totalLabel: {
+      flex: 1.25,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    totalLabelText: {
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
+    totalValue: {
+      flex: 2,
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+    },
+    totalValueText: {
+      fontWeight: 'bold',
+    },
+    emptyOptions: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  };
+
+  console.log(styles)
+
   return (
-    <ScrollView>
+    <ScrollView style={{ backgroundColor: theme.colors.background }}>
       {sections.map(([section, items], idx) => (
         <View key={section} style={styles.section}>
-          <Text style={styles.sectionTitle}>{capitalize(section)}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{capitalize(section)}</Text>
           {/* Table Header */}
-          <View style={styles.tableHeader}>
-            <Text style={styles.headerItem}>Item</Text>
+          <View style={[styles.tableHeader, { borderColor: theme.colors.border }]}>
+            <Text style={[styles.headerItem, { color: theme.colors.text }]}>Item</Text>
             <View style={styles.headerActiveContainer}>
-              <Text style={styles.headerActive}>Active</Text>
+              <Text style={[styles.headerActive, { color: theme.colors.text }]}>Active</Text>
             </View>
-            <Text style={styles.headerCalculation}>Calculation</Text>
+            <Text style={[styles.headerCalculation, { color: theme.colors.text }]}>Calculation</Text>
             <View style={styles.headerOptions}></View>
           </View>
           {/* Table Rows */}
@@ -170,9 +174,9 @@ const BudgetEditor = () => {
               <Button
                 icon="plus"
                 mode="outlined"
-                style={styles.addItemButton}
+                style={[styles.addItemButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}
                 contentStyle={styles.addItemContent}
-                labelStyle={styles.addItemLabel}
+                labelStyle={{ color: theme.colors.text }}
                 onPress={() => addItem(section, items)}
               >
                 Add Item
@@ -180,12 +184,14 @@ const BudgetEditor = () => {
             </View>
             {/* Total label right-aligned */}
             <View style={styles.totalLabel}>
-              <Text style={styles.totalLabelText}>Total:</Text>
+              <Text style={[styles.totalLabelText, { color: theme.colors.text }]}>Total:</Text>
             </View>
             {/* Total value left-aligned and green */}
             <View style={styles.totalValue}>
-              <Text style={styles.totalValueText}>
-                {sectionTotal(items)}pw
+              <Text>
+                <Text style={[styles.totalValueText, { color: theme.colors.green }]}>
+                  {sectionTotal(items)}</Text>
+                <Text style={{ color: theme.colors.text }}>pw</Text>
               </Text>
             </View>
             {/* Empty options cell */}
@@ -196,16 +202,16 @@ const BudgetEditor = () => {
           {/* After Important section, show (Leftover: $???) */}
           {section.toLowerCase() === 'important' && (
             <View style={{ marginTop: 4, marginBottom: 12 }}>
-              <Text style={{ fontWeight: 'bold' }}>
-                (Leftover: {formatCurrency(leftover)}pw)
+              <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
+                (Leftover: <Text style={{ color: theme.colors.green }}>{formatCurrency(leftover)}</Text>pw)
               </Text>
             </View>
           )}
           {/* After Voluntary section, show (Final Leftover: $???) */}
           {section.toLowerCase() === 'voluntary' && (
             <View style={{ marginTop: 4, marginBottom: 12 }}>
-              <Text style={{ fontWeight: 'bold' }}>
-                (Final Leftover: {formatCurrency(finalLeftover)}pw)
+              <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
+                (Final Leftover: <Text style={{ color: (finalLeftover <= 0 ? theme.colors.red : (finalLeftover <= 25 ? theme.colors.orange : (finalLeftover <= 50 ? theme.colors.yellow : theme.colors.green))) }}>{formatCurrency(finalLeftover)}</Text>pw)
               </Text>
             </View>
           )}

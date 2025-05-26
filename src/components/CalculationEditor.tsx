@@ -1,53 +1,7 @@
 import { View, Text, ScrollView } from 'react-native';
 import { Modal, Portal, TextInput, IconButton, Button, Dialog, Paragraph } from 'react-native-paper';
 import { useState, useEffect } from 'react';
-
-const styles = {
-  modalContent: {
-    backgroundColor: 'white',
-    margin: 24,
-    borderRadius: 8,
-    padding: 20,
-    elevation: 4,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  variableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  variableName: {
-    flex: 3,
-    marginRight: 8,
-  },
-  variableValue: {
-    flex: 2,
-    marginRight: 8,
-  },
-  variableDelete: {
-    flex: 0.5,
-  },
-  disclaimer: {
-    color: '#1976d2',
-    backgroundColor: '#e3f2fd',
-    borderRadius: 4,
-    padding: 8,
-    marginVertical: 8,
-    fontSize: 13,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 16,
-  },
-  deleteButton: {
-    marginLeft: 8,
-  },
-};
+import { useTheme } from './ThemeProvider';
 
 const CalculationEditor = ({
   visible,
@@ -58,6 +12,7 @@ const CalculationEditor = ({
   setTitle,
   title,
 }) => {
+  const theme = useTheme();
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
 
   // Variables state
@@ -114,6 +69,64 @@ const CalculationEditor = ({
     }
   }, [visible, item]);
 
+  // Styles using theme colors
+  const styles = {
+    modalContent: {
+      backgroundColor: theme.colors.background,
+      margin: 24,
+      borderRadius: 8,
+      padding: 20,
+      elevation: 4,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 12,
+      color: theme.colors.text,
+    },
+    variableRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    variableName: {
+      flex: 3,
+      marginRight: 8,
+      backgroundColor: theme.colors.background,
+      color: theme.colors.text,
+    },
+    variableValue: {
+      flex: 2,
+      marginRight: 8,
+      backgroundColor: theme.colors.background,
+      color: theme.colors.text,
+    },
+    variableDelete: {
+      flex: 0.5,
+    },
+    disclaimer: {
+      color: theme.colors.teal,
+      backgroundColor: theme.colors.background,
+      borderRadius: 4,
+      padding: 8,
+      marginVertical: 8,
+      fontSize: 13,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: 16,
+    },
+    deleteButton: {
+      marginLeft: 8,
+    },
+    calcInput: {
+      marginBottom: 8,
+      backgroundColor: theme.colors.background,
+      color: theme.colors.text,
+    },
+  };
+
   return (
     <Portal>
       <Modal visible={visible} onDismiss={onDismiss} transparent>
@@ -121,7 +134,7 @@ const CalculationEditor = ({
           <ScrollView>
             <Text style={styles.modalTitle}>Edit '{item.name}'</Text>
             {/* Variables Table */}
-            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Variables</Text>
+            <Text style={{ fontWeight: 'bold', marginBottom: 4, color: theme.colors.text }}>Variables</Text>
             {variables.map((v, idx) => (
               <View key={idx} style={styles.variableRow}>
                 <TextInput
@@ -130,6 +143,7 @@ const CalculationEditor = ({
                   onChangeText={text => updateVariable(idx, 'name', text)}
                   style={styles.variableName}
                   dense
+                  contentStyle={{ color: theme.colors.text }}
                 />
                 <TextInput
                   label="Value"
@@ -137,6 +151,7 @@ const CalculationEditor = ({
                   onChangeText={text => updateVariable(idx, 'value', text)}
                   style={styles.variableValue}
                   dense
+                  contentStyle={{ color: theme.colors.text }}
                   keyboardType="numeric"
                 />
                 <IconButton
@@ -149,17 +164,18 @@ const CalculationEditor = ({
             ))}
             <Button icon="plus" compact onPress={addVariable}>Add Variable</Button>
             {/* Calculation Field */}
-            <Text style={{ fontWeight: 'bold', marginTop: 12 }}>Calculation</Text>
+            <Text style={{ fontWeight: 'bold', marginTop: 12, color: theme.colors.text }}>Calculation</Text>
             <TextInput
               value={calcText}
               onChangeText={setCalcText}
               multiline
               mode="outlined"
-              style={{ marginBottom: 8 }}
+              style={styles.calcInput}
               placeholder="Enter calculation expression"
+              contentStyle={{ color: theme.colors.text, fontSize: 12 }}
             />
             <Text style={styles.disclaimer}>
-              Use <Text style={{ fontWeight: 'bold', color: '#388e3c' }}>{'{{$var}}'}</Text> for currency variables, <Text style={{ fontWeight: 'bold', color: '#1976d2' }}>{'{{var}}'}</Text> for calculations. Set <Text style={{ fontWeight: 'bold', color: '#d32f2f' }}>res</Text> for the final value.
+              Use <Text style={{ fontWeight: 'bold', color: theme.colors.success }}>{'{{$var}}'}</Text> for currency variables, <Text style={{ fontWeight: 'bold', color: theme.colors.blue }}>{'{{var}}'}</Text> for calculations. Set <Text style={{ fontWeight: 'bold', color: theme.colors.error }}>res</Text> for the final value.
             </Text>
             {/* Modal Actions */}
             <View style={styles.modalActions}>
@@ -169,7 +185,7 @@ const CalculationEditor = ({
                 mode="contained-tonal"
                 onPress={() => setDeleteDialogVisible(true)}
                 style={styles.deleteButton}
-                color="#d32f2f"
+                color={theme.colors.red}
               >
                 Delete Item
               </Button>
@@ -185,7 +201,7 @@ const CalculationEditor = ({
         </Dialog.Content>
         <Dialog.Actions>
           <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
-          <Button onPress={deleteItem} color="#d32f2f">Delete</Button>
+          <Button onPress={deleteItem} color={theme.colors.error}>Delete</Button>
         </Dialog.Actions>
       </Dialog>
     </Portal>

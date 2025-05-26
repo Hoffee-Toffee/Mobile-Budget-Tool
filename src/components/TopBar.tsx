@@ -1,13 +1,14 @@
 import { View } from 'react-native';
-import { Text, Menu, Button, Icon, IconButton } from 'react-native-paper';
+import { Text, Menu, Button, Icon, IconButton, TextInput } from 'react-native-paper';
 import { useState } from 'react';
-import Input from './Shared/Input';
 import currencies from '../utils/currencies';
 import { useContext } from 'react';
 import { BudgetContext } from '../context/BudgetContext';
+import { useTheme } from './ThemeProvider';
 
 const TopBar = () => {
-  const { budgetData, setBudgetData } = useContext(BudgetContext);
+  const { budgetData, setBudgetData, themeMode, setThemeMode } = useContext(BudgetContext);
+  const theme = useTheme();
   const [currencyMenuVisible, setCurrencyMenuVisible] = useState(false);
 
   const { settings: { title: budgetTitle, theme: budgetTheme, currency: selectedCurrency } } = budgetData;
@@ -44,6 +45,9 @@ const TopBar = () => {
       borderRadius: 5,
       height: 50,
       justifyContent: 'center',
+      backgroundColor: theme.colors.background,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
     },
     currencyButtonContent: {
       justifyContent: 'space-between',
@@ -53,6 +57,7 @@ const TopBar = () => {
     },
     currencyButtonLabel: {
       marginLeft: 10,
+      color: theme.colors.text,
     },
     currencyIcon: {
       marginRight: -10,
@@ -61,19 +66,22 @@ const TopBar = () => {
     currencyMenu: {
       width: 150,
       marginTop: 45,
+      backgroundColor: theme.colors.background,
     },
     currencyMenuContent: {
       height: 520,
+      backgroundColor: theme.colors.background,
     },
     themeToggle: {
       borderRadius: 5,
       borderWidth: 1,
-      borderColor: 'gray',
+      borderColor: theme.colors.border,
       marginLeft: 0,
       height: 50,
       width: 50,
       justifyContent: 'center',
       alignItems: 'center',
+      backgroundColor: theme.colors.background,
     },
   };
 
@@ -81,15 +89,18 @@ const TopBar = () => {
     <View>
       <View style={styles.topRow}>
         <View style={styles.titleInput}>
-          <Input
+          <TextInput
+            mode="outlined"
             value={titleText}
             placeholder="Budget Title"
+            label="Budget Title"
             onChangeText={setTitleText}
             onBlur={() => {
               saveSetting('title', titleText);
             }}
-            style={{ height: 50 }}
-            inputStyle={{ height: 50 }}
+            style={{ height: 50, color: theme.colors.text, backgroundColor: theme.colors.background }}
+            contentStyle={{ color: theme.colors.text, borderColor: theme.colors.border }}
+            placeholderTextColor={theme.colors.text}
           />
         </View>
         <Menu
@@ -104,9 +115,10 @@ const TopBar = () => {
               labelStyle={styles.currencyButtonLabel}
               icon={() => (
                 <View style={styles.currencyIcon}>
-                  <Icon source="chevron-down" size={20} />
+                  <Icon source="chevron-down" size={20} color={theme.colors.text} />
                 </View>
               )}
+              textColor={theme.colors.text}
             >
               {currencies.find((currency) => currency.value === selectedCurrency)?.label}
             </Button>
@@ -122,16 +134,21 @@ const TopBar = () => {
                 closeMenu();
               }}
               title={currency.label}
+              titleStyle={{ color: theme.colors.text }}
+              style={{ backgroundColor: theme.colors.background }}
             />
           ))}
         </Menu>
         <IconButton
-          icon={budgetTheme === 'dark' ? 'weather-night' : 'white-balance-sunny'}
+          icon={themeMode === 'dark' ? 'weather-night' : 'white-balance-sunny'}
           size={24}
           onPress={() => {
-            saveSetting('theme', budgetTheme === 'dark' ? 'light' : 'dark');
+            const newTheme = themeMode === 'dark' ? 'light' : 'dark';
+            setThemeMode(newTheme);
+            saveSetting('theme', newTheme);
           }}
           style={styles.themeToggle}
+          iconColor={theme.colors.text}
         />
       </View>
       {/* <Text>Import / Export</Text> */}

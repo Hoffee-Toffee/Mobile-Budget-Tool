@@ -9,7 +9,7 @@ interface InputProps {
   onBlur?: () => void;
 }
 
-const Input: React.FC<InputProps> = ({ value, placeholder, onChangeText, onBlur }) => {
+const Input: React.FC<InputProps> = ({ value, placeholder, onChangeText, onBlur, styles, }) => {
   return (
     <View style={styles.container}>
       <TextInput
@@ -24,14 +24,5 @@ const Input: React.FC<InputProps> = ({ value, placeholder, onChangeText, onBlur 
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 10,
-  },
-  input: {
-    backgroundColor: 'white',
-  },
-});
 
 export default Input;
