@@ -19,7 +19,7 @@ const CalculationEditor = ({
   const [variables, setVariables] = useState(
     Object.entries(item)
       .filter(([k]) => !['name', 'active', 'calc'].includes(k))
-      .map(([name, value]) => ({ name, value: String(value) }))
+      .map(([name, value], idx) => ({ name, value: String(value), id: `${name}-${idx}` }))
   );
   const [calcText, setCalcText] = useState(item.calc || '');
 

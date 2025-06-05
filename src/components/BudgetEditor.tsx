@@ -110,6 +110,9 @@ const BudgetEditor = () => {
       flexDirection: 'row',
       alignItems: 'center',
       marginTop: 8,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderColor: theme.colors.border,
     },
     addItem: {
       flex: 5,
@@ -119,6 +122,10 @@ const BudgetEditor = () => {
     },
     addItemContent: {
       alignSelf: 'flex-start',
+    },
+    addItemLabel: {
+      color: theme.colors.text,
+      paddingLeft: 15,
     },
     totalLabel: {
       flex: 1.25,
@@ -173,11 +180,13 @@ const BudgetEditor = () => {
             <View style={styles.addItem}>
               <Button
                 icon="plus"
+                compact
                 mode="outlined"
                 style={[styles.addItemButton, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}
                 contentStyle={styles.addItemContent}
-                labelStyle={{ color: theme.colors.text }}
+                labelStyle={styles.addItemLabel}
                 onPress={() => addItem(section, items)}
+
               >
                 Add Item
               </Button>
@@ -201,7 +210,7 @@ const BudgetEditor = () => {
           {section.toLowerCase() === 'income' && <></>}
           {/* After Important section, show (Leftover: $???) */}
           {section.toLowerCase() === 'important' && (
-            <View style={{ marginTop: 4, marginBottom: 12 }}>
+            <View style={{ marginBottom: 12, marginTop: 8, marginLeft: 4 }}>
               <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
                 (Leftover: <Text style={{ color: theme.colors.green }}>{formatCurrency(leftover)}</Text>pw)
               </Text>
@@ -209,7 +218,7 @@ const BudgetEditor = () => {
           )}
           {/* After Voluntary section, show (Final Leftover: $???) */}
           {section.toLowerCase() === 'voluntary' && (
-            <View style={{ marginTop: 4, marginBottom: 12 }}>
+            <View style={{ marginBottom: 12, marginTop: 8, marginLeft: 4 }}>
               <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
                 (Final Leftover: <Text style={{ color: (finalLeftover <= 0 ? theme.colors.red : (finalLeftover <= 25 ? theme.colors.orange : (finalLeftover <= 50 ? theme.colors.yellow : theme.colors.green))) }}>{formatCurrency(finalLeftover)}</Text>pw)
               </Text>

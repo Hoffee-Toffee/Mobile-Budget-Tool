@@ -1,6 +1,6 @@
 import { processCalculation } from '../utils/calculations';
-import { View, Text, Modal, StyleSheet, Alert, ScrollView } from 'react-native';
-import { Checkbox, IconButton, TextInput, Button, Portal, Dialog, Paragraph } from 'react-native-paper';
+import { View, Text } from 'react-native';
+import { Checkbox, IconButton, TextInput } from 'react-native-paper';
 import { useState } from 'react';
 import { formatCurrency } from '../utils/formatters';
 import CalculationEditor from './CalculationEditor';
@@ -9,18 +9,8 @@ import { useTheme } from './ThemeProvider';
 const ItemEditor = ({ section, item, setBudgetData }) => {
   const [title, setTitle] = useState(item.name);
   const [editVisible, setEditVisible] = useState(false);
-  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
-
-  // Variables state
-  const [variables, setVariables] = useState(
-    Array.isArray(item.variables)
-      ? item.variables
-      : (item.variables ? Object.entries(item.variables).map(([name, value]) => ({ name, value })) : [])
-  );
-  const [calcText, setCalcText] = useState(item.calculation || '');
 
   const theme = useTheme();
-
 
   const styles = {
     row: {
@@ -28,13 +18,24 @@ const ItemEditor = ({ section, item, setBudgetData }) => {
       alignItems: 'center',
       paddingVertical: 4,
     },
-    titleInput: {
+    dragHandle: {
+      margin: 0,
+      width: 35,
+    },
+    titleGroup: {
       flex: 5,
+      flexDirection: 'row',
       margin: 0,
       padding: 0,
+      alignItems: 'center',
+    },
+    titleInput: {
+      height: 10,
+      flex: 5,
+      padding: 0,
+      margin: 0,
       backgroundColor: 'transparent',
       fontSize: 16,
-      height: 10,
     },
     checkboxCell: {
       flex: 1.25,
@@ -119,31 +120,6 @@ const ItemEditor = ({ section, item, setBudgetData }) => {
     }));
   };
 
-  // Save all modal edits
-  const saveModal = () => {
-    setItemProp('name', title);
-    setItemProp('variables', variables.reduce((acc, v) => ({ ...acc, [v.name]: v.value }), {}));
-    setItemProp('calculation', calcText);
-    setEditVisible(false);
-  };
-
-  // Delete item with confirmation
-  const deleteItem = () => {
-    setDeleteDialogVisible(false);
-    setEditVisible(false);
-    setBudgetData((prevData) => ({
-      ...prevData,
-      [section]: prevData[section].filter((i) => i.name !== item.name)
-    }));
-  };
-
-  // Variable table handlers
-  const updateVariable = (idx, key, value) => {
-    setVariables(vars => vars.map((v, i) => i === idx ? { ...v, [key]: value } : v));
-  };
-  const addVariable = () => setVariables(vars => [...vars, { name: '', value: '' }]);
-  const removeVariable = (idx) => setVariables(vars => vars.filter((_, i) => i !== idx));
-
   return (
     <>
       <View
@@ -152,16 +128,27 @@ const ItemEditor = ({ section, item, setBudgetData }) => {
           { opacity: item.active ? 1 : 0.5, backgroundColor: theme.colors.background }
         ]}
       >
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          onBlur={() => setItemProp('name', title)}
-          mode="outlined"
-          style={{ ...styles.titleInput, color: theme.colors.text, backgroundColor: theme.colors.background }}
-          contentStyle={{ color: theme.colors.text }}
-          onSubmitEditing={() => setItemProp('name', title)}
-          returnKeyType="done"
-        />
+        {/* Drag Handle */}
+        {/* Title */}
+        <View style={styles.titleGroup}>
+          <IconButton
+            icon="drag-horizontal-variant"
+            size={20}
+            iconColor={theme.colors.text}
+            style={styles.dragHandle}
+          />
+          <TextInput
+            value={title}
+            onChangeText={setTitle}
+            onBlur={() => setItemProp('name', title)}
+            mode="outlined"
+            style={{ ...styles.titleInput, color: theme.colors.text, backgroundColor: theme.colors.background }}
+            contentStyle={{ color: theme.colors.text }}
+            onSubmitEditing={() => setItemProp('name', title)}
+            returnKeyType="done"
+          />
+
+        </View>
         {/* Active Checkbox */}
         <View style={styles.checkboxCell}>
           <Checkbox
