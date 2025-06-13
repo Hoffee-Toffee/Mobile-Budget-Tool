@@ -1,6 +1,6 @@
 import { View, Text, ScrollView } from 'react-native';
 import { Modal, Portal, TextInput, IconButton, Button, Dialog, Paragraph } from 'react-native-paper';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from './ThemeProvider';
 
 const CalculationEditor = ({
@@ -21,7 +21,6 @@ const CalculationEditor = ({
       .filter(([k]) => !['name', 'active', 'calc'].includes(k))
       .map(([name, value], idx) => ({ name, value: String(value), id: `${name}-${idx}` }))
   );
-  const [calcText, setCalcText] = useState(item.calc || '');
 
   const setItemProp = (key, value) => {
     setBudgetData((prevData) => ({
@@ -36,11 +35,35 @@ const CalculationEditor = ({
 
   // Save all modal edits
   const saveModal = () => {
-    setItemProp('name', title);
-    setItemProp('calc', calcText);
-    variables.forEach((v) => {
-      setItemProp(v.name, v.value === '' ? 0 : Number(v.value));
+    const itemToSave = {
+      name: title,
+      active: item.active,
+      calc: calcTextInputRef.current || ''
+    };
+
+    variables.forEach((originalVar, idx) => {
+      const varKeyFromNameInState = originalVar.name;
+      const currentName = variableInputRefs.current[`var-${idx}-name`] !== undefined
+        ? variableInputRefs.current[`var-${idx}-name`]
+        : originalVar.name;
+
+      const currentValueStr = variableInputRefs.current[`var-${idx}-value`] !== undefined
+        ? variableInputRefs.current[`var-${idx}-value`]
+        : String(originalVar.value);
+
+      if (currentName) {
+        itemToSave[currentName] = currentValueStr === '' ? 0 : Number(currentValueStr);
+      }
     });
+    
+    setBudgetData(prevData => ({
+      ...prevData,
+      [section]: prevData[section].map(i =>
+        i.name === item.name
+          ? itemToSave
+          : i
+      )
+    }));
     onDismiss();
   };
 
@@ -61,13 +84,47 @@ const CalculationEditor = ({
   const addVariable = () => setVariables(vars => [...vars, { name: '', value: '' }]);
   const removeVariable = (idx) => setVariables(vars => vars.filter((_, i) => i !== idx));
 
+  const processedItemNameRef = useRef(null);
+  const prevVisibleRef = useRef(visible);
+  const variableInputRefs = useRef({});
+  const calcTextInputRef = useRef('');
+
+  // Effect to reset state when item changes or modal opens/closes
   useEffect(() => {
-    if (visible) {
-      console.log('CalculationEditor open:', item);
-    } else {
-      console.log('CalculationEditor close:', item);
+    const wasVisible = prevVisibleRef.current;
+    prevVisibleRef.current = visible; // Update for next cycle
+
+    if (!visible) {
+      processedItemNameRef.current = null;
+      return;
     }
-  }, [visible, item]);
+
+    if (!item) {
+      return;
+    }
+
+    const isNewlyVisible = !wasVisible && visible;
+    const isDifferentItem = item.name !== processedItemNameRef.current;
+
+    if (isNewlyVisible || isDifferentItem) {
+      setTitle(item.name); 
+      calcTextInputRef.current = item.calc || '';
+      const currentVariables = Object.entries(item)
+        .filter(([k]) => !['name', 'active', 'calc'].includes(k))
+        .map(([name, value], i) => ({ name, value: String(value), id: `${name}-${i}` })); // Use i for idx to avoid conflict
+      
+      setVariables(currentVariables);
+
+      const newVarInputs = {};
+      currentVariables.forEach((v, i) => {
+        newVarInputs[`var-${i}-name`] = v.name;
+        newVarInputs[`var-${i}-value`] = v.value;
+      });
+      variableInputRefs.current = newVarInputs;
+      
+      processedItemNameRef.current = item.name;
+    }
+  }, [visible, item, setTitle]);
 
   // Styles using theme colors
   const styles = {
@@ -139,20 +196,24 @@ const CalculationEditor = ({
               <View key={idx} style={styles.variableRow}>
                 <TextInput
                   label="Name"
-                  value={v.name}
-                  onChangeText={text => updateVariable(idx, 'name', text)}
+                  defaultValue={variableInputRefs.current[`var-${idx}-name`] !== undefined ? variableInputRefs.current[`var-${idx}-name`] : v.name}
+                  onChangeText={text => { variableInputRefs.current[`var-${idx}-name`] = text; }}
                   style={styles.variableName}
                   dense
                   contentStyle={{ color: theme.colors.text }}
+                  autoCorrect={false}
+                  autoComplete="off"
                 />
                 <TextInput
                   label="Value"
-                  value={v.value}
-                  onChangeText={text => updateVariable(idx, 'value', text)}
+                  defaultValue={variableInputRefs.current[`var-${idx}-value`] !== undefined ? variableInputRefs.current[`var-${idx}-value`] : String(v.value)}
+                  onChangeText={text => { variableInputRefs.current[`var-${idx}-value`] = text; }}
                   style={styles.variableValue}
                   dense
                   contentStyle={{ color: theme.colors.text }}
                   keyboardType="numeric"
+                  autoCorrect={false}
+                  autoComplete="off"
                 />
                 <IconButton
                   icon="delete"
@@ -166,13 +227,17 @@ const CalculationEditor = ({
             {/* Calculation Field */}
             <Text style={{ fontWeight: 'bold', marginTop: 12, color: theme.colors.text }}>Calculation</Text>
             <TextInput
-              value={calcText}
-              onChangeText={setCalcText}
+              defaultValue={calcTextInputRef.current}
+              onChangeText={text => {
+                calcTextInputRef.current = text;
+              }}
               multiline
               mode="outlined"
               style={styles.calcInput}
               placeholder="Enter calculation expression"
               contentStyle={{ color: theme.colors.text, fontSize: 12 }}
+              autoCorrect={false}
+              autoComplete="off"
             />
             <Text style={styles.disclaimer}>
               Use <Text style={{ fontWeight: 'bold', color: theme.colors.success }}>{'{{$var}}'}</Text> for currency variables, <Text style={{ fontWeight: 'bold', color: theme.colors.blue }}>{'{{var}}'}</Text> for calculations. Set <Text style={{ fontWeight: 'bold', color: theme.colors.error }}>res</Text> for the final value.

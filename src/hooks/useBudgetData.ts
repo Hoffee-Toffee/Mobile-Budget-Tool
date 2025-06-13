@@ -111,8 +111,8 @@ const useBudgetData = () => {
 
   useEffect(() => {
     if (budgetData && toSave.current) {
+      toSave.current = false;
       saveBudgetData(budgetData);
-      console.error('Budget data saved');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [budgetData]);
@@ -120,7 +120,6 @@ const useBudgetData = () => {
   const saveBudgetData = async (data: BudgetData) => {
     try {
       await AsyncStorage.setItem('budgetData', JSON.stringify(data));
-      setBudgetData(data);
     } catch (error) {
       console.error('Failed to save budget data:', error);
     }
