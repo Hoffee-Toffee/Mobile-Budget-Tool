@@ -85,13 +85,14 @@ const MealPlannerScreen: React.FC = () => {
   };
 
   const openNewIngredientDetailModal = () => {
-    setCurrentIngredient({ name: '', price: 0, unit: ingredientUnits[0] });
+    setCurrentIngredient({ name: '', price: 0, unitType: ingredientUnits[0], unitQuantity: 1 });
     setIsEditingIngredient(false);
     setIngredientDetailModalVisible(true);
   };
 
   const openEditIngredientModal = (ingredient: Ingredient) => {
-    setCurrentIngredient({ ...ingredient });
+    // When editing, ensure unitQuantity is also populated
+    setCurrentIngredient({ ...ingredient, unitQuantity: ingredient.unitQuantity || 1 });
     setIsEditingIngredient(true);
     setIngredientDetailModalVisible(true);
   };
@@ -109,12 +110,17 @@ const MealPlannerScreen: React.FC = () => {
       return;
     }
     if (isEditingIngredient && currentIngredient.id) {
-      editIngredient(currentIngredient as Ingredient);
+      editIngredient({
+        ...currentIngredient,
+        unitType: currentIngredient.unitType || '', // Ensure unitType is always a string
+        unitQuantity: currentIngredient.unitQuantity || 1, // Ensure unitQuantity is valid
+      } as Ingredient);
     } else {
       addIngredient({
         name: currentIngredient.name || 'Unnamed Ingredient',
         price: currentIngredient.price || 0,
-        unit: currentIngredient.unit || '',
+        unitType: currentIngredient.unitType || '',
+        unitQuantity: currentIngredient.unitQuantity || 1,
       });
     }
     setIngredientDetailModalVisible(false); // Close detail modal
@@ -136,10 +142,10 @@ const MealPlannerScreen: React.FC = () => {
           const subMeal = meals.find(m => m.id === mealItem.ingredientId && m.isIngredient);
 
           let name = 'Unknown Ingredient';
-          let unit = '';
+          let unit = ''; // This will now be unitType
           if (ingredient) {
             name = ingredient.name;
-            unit = ingredient.unit;
+            unit = ingredient.unitType; // Use unitType here
           } else if (subMeal) {
             name = `${subMeal.name} (Meal)`;
             unit = 'serving';
@@ -230,7 +236,7 @@ const MealPlannerScreen: React.FC = () => {
                       <Card.Content style={styles.mealItemContainer}>
                         <View style={styles.mealItemDetails}>
                           <Text style={styles.mealItemName}>{ingredient ? ingredient.name : 'Unknown Ingredient'}</Text>
-                          <Text>Amount: {mealItem.amount} {ingredient ? ingredient.unit : ''}</Text>
+                          <Text>Amount: {mealItem.amount} {ingredient ? ingredient.unitType : ''}</Text>
                         </View>
                         <View style={styles.mealItemActions}>
                           <IconButton icon="pencil-outline" size={18} onPress={() => openEditMealItemModal(mealItem)} />
@@ -304,7 +310,9 @@ const MealPlannerScreen: React.FC = () => {
                   <Card.Content style={styles.listItemContainer}>
                     <View style={styles.listItemTextContainer}>
                       <Text style={styles.listItemName}>{item.name}</Text>
-                      <Text style={styles.listItemDetails}>Price: ${item.price ? item.price.toFixed(2) : '0.00'} / {item.unit || 'unit'}</Text>
+                      <Text style={styles.listItemDetails}>
+                        Price: ${item.price ? item.price.toFixed(2) : '0.00'} / {item.unitQuantity} {item.unitType || 'item(s)'}
+                      </Text>
                     </View>
                     <View style={styles.listItemActions}>
                       <IconButton icon="pencil" onPress={() => openEditIngredientModal(item)} size={20} />
@@ -341,14 +349,19 @@ const MealPlannerScreen: React.FC = () => {
               style={styles.input}
             />
             <TextInput
-              label={`Unit (e.g., ${ingredientUnits.slice(0,3).join(', ')} or blank)`}
-              value={currentIngredient.unit || ''}
-              onChangeText={text => setCurrentIngredient(prev => ({ ...prev, unit: text }))}
-              placeholder={`Available: ${ingredientUnits.join(', ')}`}
+              label="Unit Type (e.g., kg, pcs, pack)"
+              value={currentIngredient.unitType || ''}
+              onChangeText={text => setCurrentIngredient(prev => ({ ...prev, unitType: text }))}
+              placeholder={`E.g.: ${ingredientUnits.join(', ')}`}
               style={styles.input}
             />
-            {/* Simple Text display for selected unit for now, Picker is more complex */}
-            {/* <Text>Selected unit: {currentIngredient.unit}</Text> */}
+            <TextInput
+              label="Items per Unit Price (Unit Quantity)"
+              value={currentIngredient.unitQuantity ? String(currentIngredient.unitQuantity) : '1'}
+              onChangeText={text => setCurrentIngredient(prev => ({ ...prev, unitQuantity: parseInt(text, 10) || 1 }))}
+              keyboardType="numeric"
+              style={styles.input}
+            />
             <Button mode="contained" onPress={handleSaveIngredient} style={styles.button}>
               {isEditingIngredient ? "Update Ingredient" : "Save Ingredient"}
             </Button>

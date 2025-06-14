@@ -6,8 +6,9 @@ import uuid from 'react-native-uuid'; // For generating unique IDs
 export interface Ingredient {
   id: string;
   name: string;
-  price: number; // Price per unit
-  unit: string; // e.g., "grams", "ml", "pcs", "" (for unit-less items)
+  price: number; // Price per unit (e.g., price for 1kg if unitType is 'kg' and unitQuantity is 1)
+  unitType: string; // e.g., "kg", "ml", "pcs", "" (for unit-less items like 'pack')
+  unitQuantity: number; // The amount this price refers to (e.g., 1 for 1kg, 500 for 500g pack)
 }
 
 export interface MealItem {
@@ -29,12 +30,15 @@ const INGREDIENTS_STORAGE_KEY = 'ingredientData';
 
 // --- Sample Data ---
 const initialIngredients: Ingredient[] = [
-  { id: uuid.v4() as string, name: 'Chicken Breast', price: 10, unit: 'kg' },
-  { id: uuid.v4() as string, name: 'Broccoli', price: 3, unit: 'kg' },
-  { id: uuid.v4() as string, name: 'Rice', price: 2, unit: 'kg' },
-  { id: uuid.v4() as string, name: 'Olive Oil', price: 15, unit: 'liter' },
-  { id: uuid.v4() as string, name: 'Salt', price: 1, unit: 'kg' },
-  { id: uuid.v4() as string, name: 'Pepper', price: 5, unit: 'kg' },
+  { id: uuid.v4() as string, name: 'Chicken Breast', price: 10, unitType: 'kg', unitQuantity: 1 },
+  { id: uuid.v4() as string, name: 'Broccoli', price: 3, unitType: 'kg', unitQuantity: 1 },
+  { id: uuid.v4() as string, name: 'Rice', price: 2, unitType: 'kg', unitQuantity: 1 },
+  { id: uuid.v4() as string, name: 'Olive Oil', price: 15, unitType: 'liter', unitQuantity: 1 },
+  { id: uuid.v4() as string, name: 'Salt', price: 1, unitType: 'kg', unitQuantity: 1 }, // Price for 1 kg of salt. User would use 0.002 kg for 2g.
+  { id: uuid.v4() as string, name: 'Pepper', price: 5, unitType: 'kg', unitQuantity: 1 },// Price for 1 kg of pepper.
+  // Example for a pack:
+  // { id: uuid.v4() as string, name: 'Tuna Can', price: 1.5, unitType: 'can', unitQuantity: 1 }, // Price for 1 can
+  // { id: uuid.v4() as string, name: 'Soda Pack', price: 8, unitType: 'pack', unitQuantity: 6 }, // Price for a 6-pack
 ];
 
 const initialMeals: Meal[] = [
@@ -73,7 +77,20 @@ const useMealData = () => {
         }
 
         if (storedIngredients) {
-          setIngredients(JSON.parse(storedIngredients));
+          const parsedIngredients: any[] = JSON.parse(storedIngredients);
+          const migratedIngredients: Ingredient[] = parsedIngredients.map(ing => {
+            // Check for old 'unit' field and migrate to 'unitType'
+            if (ing.unit && !ing.unitType) {
+              ing.unitType = ing.unit;
+              delete ing.unit;
+            }
+            // Ensure unitQuantity is valid, default to 1 if not
+            if (ing.unitQuantity === undefined || ing.unitQuantity === null || typeof ing.unitQuantity !== 'number' || ing.unitQuantity <= 0) {
+              ing.unitQuantity = 1;
+            }
+            return ing as Ingredient;
+          });
+          setIngredients(migratedIngredients);
         } else {
           setIngredients(initialIngredients);
         }
@@ -107,13 +124,24 @@ const useMealData = () => {
 
   // --- Ingredients CRUD ---
   const addIngredient = (ingredient: Omit<Ingredient, 'id'>) => {
-    const newIngredient = { ...ingredient, id: uuid.v4() as string };
+    const unitQuantity = (ingredient.unitQuantity !== undefined && ingredient.unitQuantity > 0)
+                         ? ingredient.unitQuantity
+                         : 1;
+    const newIngredient = { ...ingredient, unitQuantity, id: uuid.v4() as string };
     setIngredients(prev => [...prev, newIngredient]);
     return newIngredient;
   };
 
   const editIngredient = (updatedIngredient: Ingredient) => {
-    setIngredients(prev => prev.map(ing => ing.id === updatedIngredient.id ? updatedIngredient : ing));
+    const unitQuantity = (updatedIngredient.unitQuantity !== undefined && updatedIngredient.unitQuantity > 0)
+                         ? updatedIngredient.unitQuantity
+                         : 1; // Default to 1 if an invalid value is explicitly passed
+
+    setIngredients(prev => prev.map(ing =>
+      ing.id === updatedIngredient.id
+        ? { ...updatedIngredient, unitQuantity }
+        : ing
+    ));
   };
 
   const deleteIngredient = (ingredientId: string) => {

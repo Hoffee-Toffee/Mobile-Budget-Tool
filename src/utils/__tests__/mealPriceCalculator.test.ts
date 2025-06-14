@@ -2,71 +2,67 @@ import { calculateIngredientPrice, calculateMealTotalPrice } from '../mealPriceC
 import { Ingredient, Meal, MealItem } from '../../hooks/useMealData'; // Adjust path as needed
 
 describe('Meal Price Calculation Utilities', () => {
-  // Sample data for testing
+  // Updated Sample data for testing
   const sampleIngredients: Ingredient[] = [
-    { id: 'ing1', name: 'Chicken', price: 10, unit: 'kg' }, // 10 per kg
-    { id: 'ing2', name: 'Salt', price: 1, unit: 'g' },     // 1 per g
-    { id: 'ing3', name: 'Olive Oil', price: 15, unit: 'liter' },// 15 per liter
-    { id: 'ing4', name: 'Water', price: 0.1, unit: 'ml' },  // 0.1 per ml
-    { id: 'ing5', name: 'Egg', price: 0.5, unit: 'pcs' },   // 0.5 per piece
-    { id: 'ing6', name: 'Coke Can', price: 1.5, unit: 'can' }, // 1.5 per can
-    { id: 'ing7', name: 'Bread Slice', price: 0.2, unit: 'slice' }, // 0.2 per slice
-    { id: 'ing8', name: 'Tuna Spread', price: 2, unit: '' }, // 2 per "unit" (e.g. a pack)
-    { id: 'ing9', name: 'Gold Flakes', price: 100, unit: 'mg' }, // Example of a unit not explicitly handled by simple cases
+    { id: 'ing1', name: 'Chicken', price: 10, unitType: 'kg', unitQuantity: 1 },    // $10 per 1 kg
+    { id: 'ing2', name: 'Salt', price: 2, unitType: 'g', unitQuantity: 100 },       // $2 per 100 g
+    { id: 'ing3', name: 'Olive Oil', price: 15, unitType: 'liter', unitQuantity: 1 }, // $15 per 1 liter
+    { id: 'ing4', name: 'Water', price: 5, unitType: 'ml', unitQuantity: 1000 },    // $5 per 1000 ml (1 liter)
+    { id: 'ing5', name: 'Egg', price: 3, unitType: 'pcs', unitQuantity: 12 },      // $3 per 12 pieces (a dozen)
+    { id: 'ing6', name: 'Coke Can', price: 8, unitType: 'can', unitQuantity: 6 },   // $8 per 6 cans (a pack)
+    { id: 'ing7', name: 'Bread Slice', price: 4, unitType: 'slice', unitQuantity: 20 },// $4 per 20 slices (a loaf)
+    { id: 'ing8', name: 'Tuna Spread', price: 2, unitType: '', unitQuantity: 1 },      // $2 per 1 unit/pack
+    { id: 'ing9', name: 'Gold Flakes', price: 100, unitType: 'mg', unitQuantity: 10 },// $100 per 10 mg
+    { id: 'ing10', name: 'Invalid Qty Ing', price: 50, unitType: 'pcs', unitQuantity: 0 },// Invalid unitQuantity
   ];
 
   describe('calculateIngredientPrice', () => {
-    it('should calculate price correctly for unit "kg"', () => {
-      // Using 0.2 kg of Chicken (10/kg) = 2
+    it('should calculate price based on unitQuantity = 1', () => {
+      // Chicken: $10 for 1kg. MealItem uses 0.2 kg. Cost = (10/1) * 0.2 = 2
       const mealItem: MealItem = { ingredientId: 'ing1', amount: 0.2 };
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(10 * 0.2);
+      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(2);
     });
 
-    it('should calculate price correctly for unit "g"', () => {
-      // Using 5g of Salt (1/g) = 5
-      const mealItem: MealItem = { ingredientId: 'ing2', amount: 5 };
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(1 * 5);
+    it('should calculate price based on unitQuantity > 1', () => {
+      // Salt: $2 for 100g. MealItem uses 50 (grams). Cost = (2/100) * 50 = 1
+      const mealItem: MealItem = { ingredientId: 'ing2', amount: 50 };
+      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(1);
     });
 
-    it('should calculate price correctly for unit "liter"', () => {
-      // Using 0.05 liter of Olive Oil (15/liter) = 0.75
-      const mealItem: MealItem = { ingredientId: 'ing3', amount: 0.05 };
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(15 * 0.05);
+    it('should calculate price for Eggs (pcs with unitQuantity > 1)', () => {
+        // Eggs: $3 for 12 pcs. MealItem uses 2 pcs. Cost = (3/12) * 2 = 0.5
+        const mealItem: MealItem = { ingredientId: 'ing5', amount: 2 };
+        expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(0.5);
     });
 
-    it('should calculate price correctly for unit "ml"', () => {
-      // Using 100ml of Water (0.1/ml) = 10
-      const mealItem: MealItem = { ingredientId: 'ing4', amount: 100 };
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(0.1 * 100);
+    it('should calculate price for Coke Cans (can with unitQuantity > 1)', () => {
+        // Coke: $8 for 6 cans. MealItem uses 3 cans. Cost = (8/6) * 3 = 4
+        const mealItem: MealItem = { ingredientId: 'ing6', amount: 3 };
+        expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(4);
     });
 
-    it('should calculate price correctly for unit "pcs"', () => {
-      // Using 2 Eggs (0.5/pcs) = 1
-      const mealItem: MealItem = { ingredientId: 'ing5', amount: 2 };
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(0.5 * 2);
+    it('should calculate price for Bread Slices', () => {
+        // Bread: $4 for 20 slices. MealItem uses 5 slices. Cost = (4/20) * 5 = 1
+        const mealItem: MealItem = { ingredientId: 'ing7', amount: 5 };
+        expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(1);
     });
 
-    it('should calculate price correctly for unit "can"', () => {
-      const mealItem: MealItem = { ingredientId: 'ing6', amount: 3 }; // 3 cans
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(1.5 * 3);
-    });
-
-    it('should calculate price correctly for unit "slice"', () => {
-      const mealItem: MealItem = { ingredientId: 'ing7', amount: 4 }; // 4 slices
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(0.2 * 4);
-    });
-
-    it('should calculate price correctly for blank unit (treat as per item/pack)', () => {
-      // Using 0.5 pack of Tuna Spread (2/pack) = 1
+    it('should calculate price correctly for blank unitType (treats unitQuantity as 1 if not specified)', () => {
+      // Tuna Spread: $2 for 1 pack. MealItem uses 0.5 pack. Cost = (2/1) * 0.5 = 1
       const mealItem: MealItem = { ingredientId: 'ing8', amount: 0.5 };
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(2 * 0.5);
+      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(1);
     });
 
-    it('should calculate price with default multiplication for unhandled specific units like "mg"', () => {
-      // Using 10mg of Gold Flakes (100/mg) = 1000
-      const mealItem: MealItem = { ingredientId: 'ing9', amount: 10 };
-      // Expect console.warn to have been called if possible to spy on it
-      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBe(100 * 10);
+    it('should calculate price for Gold Flakes (custom unitType, specific unitQuantity)', () => {
+      // Gold Flakes: $100 per 10mg. MealItem uses 5 (mg). Cost = (100/10) * 5 = 50
+      const mealItem: MealItem = { ingredientId: 'ing9', amount: 5 };
+      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(50);
+    });
+
+    it('should handle ingredient with unitQuantity 0 or invalid by defaulting to 1', () => {
+      // Invalid Qty Ing: $50, unitQuantity is 0 (defaults to 1). MealItem uses 2. Cost = (50/1) * 2 = 100
+      const mealItem: MealItem = { ingredientId: 'ing10', amount: 2 };
+      expect(calculateIngredientPrice(mealItem, sampleIngredients)).toBeCloseTo(100);
     });
 
     it('should return 0 if ingredient not found', () => {
@@ -76,38 +72,51 @@ describe('Meal Price Calculation Utilities', () => {
   });
 
   describe('calculateMealTotalPrice', () => {
+    // Updated meal1Items based on new sampleIngredients and price logic
+    // ing1 (Chicken): (10/1) * 0.1 = 1
+    // ing5 (Egg): (3/12) * 2 = 0.5
+    // Total for items = 1 + 0.5 = 1.5
     const meal1Items: MealItem[] = [
-      { ingredientId: 'ing1', amount: 0.1 }, // Chicken 0.1kg = 1
-      { ingredientId: 'ing5', amount: 2 },   // Egg 2pcs = 1
-    ]; // Total for items = 1 + 1 = 2
+      { ingredientId: 'ing1', amount: 0.1 },
+      { ingredientId: 'ing5', amount: 2 },
+    ];
     const simpleMeal: Meal = { id: 'meal1', name: 'Simple Meal', items: meal1Items, multiplier: 1, isIngredient: false };
-    const simpleMealX2: Meal = { ...simpleMeal, id: 'meal1x2', multiplier: 2 }; // Total = 2 * 2 = 4
+    // Total = 1.5 * 1 = 1.5
+    const simpleMealX2: Meal = { ...simpleMeal, id: 'meal1x2', multiplier: 2 }; // Total = 1.5 * 2 = 3
 
-    const mealIngredient: Meal = { id: 'subMeal1', name: 'Chicken Dish Base', items: [{ingredientId: 'ing1', amount: 0.5}], multiplier: 1, isIngredient: true }; // 0.5kg Chicken = 5
+    // mealIngredient (subMeal1)
+    // ing1 (Chicken): (10/1) * 0.5 = 5
+    const mealIngredient: Meal = { id: 'subMeal1', name: 'Chicken Dish Base', items: [{ingredientId: 'ing1', amount: 0.5}], multiplier: 1, isIngredient: true };
+    // Total for subMeal1 = 5 * 1 = 5
 
+    // complexMeal
+    // SubMeal1: 2 servings, cost = 5 per serving => 2 * 5 = 10
+    // ing2 (Salt): $2 per 100g. Item uses 3g. Cost = (2/100) * 3 = 0.06
+    // Total for items = 10 + 0.06 = 10.06
     const complexMeal: Meal = {
       id: 'meal2',
       name: 'Complex Meal',
       items: [
-        { ingredientId: 'subMeal1', amount: 2 }, // 2 servings of Chicken Dish Base = 2 * 5 = 10
-        { ingredientId: 'ing2', amount: 3 },     // 3g Salt = 3 * 1 = 3
+        { ingredientId: 'subMeal1', amount: 2 },
+        { ingredientId: 'ing2', amount: 3 },
       ],
       multiplier: 1,
       isIngredient: false,
-    }; // Total = 10 + 3 = 13
+    };
+    // Total = 10.06 * 1 = 10.06
 
     const allMeals: Meal[] = [simpleMeal, simpleMealX2, mealIngredient, complexMeal];
 
     it('should calculate total price for a simple meal', () => {
-      expect(calculateMealTotalPrice(simpleMeal, sampleIngredients, allMeals)).toBe(2);
+      expect(calculateMealTotalPrice(simpleMeal, sampleIngredients, allMeals)).toBeCloseTo(1.5);
     });
 
     it('should apply multiplier correctly', () => {
-      expect(calculateMealTotalPrice(simpleMealX2, sampleIngredients, allMeals)).toBe(4);
+      expect(calculateMealTotalPrice(simpleMealX2, sampleIngredients, allMeals)).toBeCloseTo(3);
     });
 
     it('should calculate total price for a meal containing another meal as an ingredient', () => {
-      expect(calculateMealTotalPrice(complexMeal, sampleIngredients, allMeals)).toBe(13);
+      expect(calculateMealTotalPrice(complexMeal, sampleIngredients, allMeals)).toBeCloseTo(10.06);
     });
 
     it('should handle meal as ingredient with its own multiplier (sub-meal multiplier is part of its pre-calculated cost)', () => {

@@ -52,8 +52,8 @@ describe('MealPlannerScreen Component', () => {
     { id: 'm2', name: 'Meal 2', items: [], multiplier: 2, isIngredient: true },
   ];
   const mockIngredients: Ingredient[] = [
-    { id: 'i1', name: 'Ingredient 1', price: 10, unit: 'g' },
-    { id: 'i2', name: 'Ingredient 2', price: 5, unit: 'pcs' },
+    { id: 'i1', name: 'Ingredient 1', price: 10, unitType: 'g', unitQuantity: 1 },
+    { id: 'i2', name: 'Ingredient 2', price: 5, unitType: 'pcs', unitQuantity: 1 },
   ];
 
   const mockAddMeal = jest.fn();
@@ -123,10 +123,11 @@ describe('MealPlannerScreen Component', () => {
     await waitFor(() => expect(getByText('Manage Ingredients', { selector: 'Title' })).toBeTruthy());
     // Check for an ingredient from the list
     expect(getByText('Ingredient 1')).toBeTruthy();
-    expect(getByText('Price: $10.00 / g')).toBeTruthy();
+    // Updated assertion for new display format
+    expect(getByText('Price: $10.00 / 1 g')).toBeTruthy();
   });
 
-  it('should open Add New Ingredient modal from Manage Ingredients modal', async () => {
+  it('should open Add New Ingredient modal from Manage Ingredients modal, fill and save', async () => {
     const { getByText, queryByText, getByLabelText } = render(<MealPlannerScreen />, { wrapper: AllTheProviders });
 
     // Open Manage Ingredients modal first
@@ -141,13 +142,22 @@ describe('MealPlannerScreen Component', () => {
 
     await waitFor(() => expect(getByText('Add New Ingredient', { selector: 'Title' })).toBeTruthy());
 
-    // Type in ingredient name
+    // Type in ingredient name, price, unitType, and unitQuantity
     fireEvent.changeText(getByLabelText('Ingredient Name'), 'New Ing Test');
     fireEvent.changeText(getByLabelText('Price'), '3.5');
-    // fireEvent.changeText(getByLabelText(/Unit \(e.g., kg, g, pcs, ml, liter\)/i), 'bottle'); // Unit input
+    fireEvent.changeText(getByLabelText('Unit Type (e.g., kg, pcs, pack)'), 'bottle');
+    fireEvent.changeText(getByLabelText('Items per Unit Price (Unit Quantity)'), '6');
+
 
     fireEvent.press(getByText('Save Ingredient'));
-    await waitFor(() => expect(mockAddIngredient).toHaveBeenCalledWith(expect.objectContaining({name: 'New Ing Test', price: 3.5})));
+    await waitFor(() => expect(mockAddIngredient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'New Ing Test',
+        price: 3.5,
+        unitType: 'bottle',
+        unitQuantity: 6,
+      })
+    ));
     expect(queryByText('Add New Ingredient', { selector: 'Title' })).toBeNull(); // Detail modal should close
   });
 

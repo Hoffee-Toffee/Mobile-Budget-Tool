@@ -49,28 +49,60 @@ describe('useMealData Hook', () => {
     expect(require('@react-native-async-storage/async-storage').getItem).toHaveBeenCalledWith(INGREDIENTS_STORAGE_KEY);
   });
 
-  it('should load data from AsyncStorage if available', async () => {
-    const mockIngredients: Ingredient[] = [{ id: 'ing1', name: 'Test Ing', price: 10, unit: 'kg' }];
+  it('should load data from AsyncStorage if available and correctly typed', async () => {
+    const mockIngredientsTyped: Ingredient[] = [{ id: 'ing1', name: 'Test Ing', price: 10, unitType: 'kg', unitQuantity: 1 }];
     const mockMeals: Meal[] = [{ id: 'meal1', name: 'Test Meal', items: [], multiplier: 1, isIngredient: false }];
-    mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify(mockIngredients);
+    mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify(mockIngredientsTyped);
     mockAsyncStorageData[MEALS_STORAGE_KEY] = JSON.stringify(mockMeals);
 
     const { result, waitForNextUpdate } = renderHook(() => useMealData());
     await waitForNextUpdate();
 
     expect(result.current.loading).toBe(false);
-    expect(result.current.ingredients).toEqual(mockIngredients);
+    expect(result.current.ingredients).toEqual(mockIngredientsTyped);
     expect(result.current.meals).toEqual(mockMeals);
   });
 
-  // More tests will be added here for CRUD operations
+  it('should migrate old ingredient data from AsyncStorage (unit to unitType, default unitQuantity)', async () => {
+    const oldMockIngredients = [
+      { id: 'ing1', name: 'Old Ing 1', price: 5, unit: 'g' }, // Old format
+      { id: 'ing2', name: 'Old Ing 2', price: 10, unit: 'ml', unitQuantity: null }, // Old with null unitQuantity
+      { id: 'ing3', name: 'Old Ing 3', price: 10, unitType: 'pcs', unitQuantity: 0 }, // New format, invalid unitQuantity
+      { id: 'ing4', name: 'Old Ing 4', price: 10, unitType: 'pack', unitQuantity: 2 }, // New format, valid
+    ];
+    mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify(oldMockIngredients);
+
+    const { result, waitForNextUpdate } = renderHook(() => useMealData());
+    await waitForNextUpdate();
+
+    expect(result.current.loading).toBe(false);
+    const migratedIngredients = result.current.ingredients;
+
+    const ing1 = migratedIngredients.find(i => i.id === 'ing1');
+    expect(ing1?.unitType).toBe('g');
+    expect(ing1?.unitQuantity).toBe(1);
+    expect(ing1).not.toHaveProperty('unit');
+
+    const ing2 = migratedIngredients.find(i => i.id === 'ing2');
+    expect(ing2?.unitType).toBe('ml');
+    expect(ing2?.unitQuantity).toBe(1);
+
+    const ing3 = migratedIngredients.find(i => i.id === 'ing3');
+    expect(ing3?.unitType).toBe('pcs');
+    expect(ing3?.unitQuantity).toBe(1);
+
+    const ing4 = migratedIngredients.find(i => i.id === 'ing4');
+    expect(ing4?.unitType).toBe('pack');
+    expect(ing4?.unitQuantity).toBe(2);
+  });
+
 
   describe('Ingredient CRUD Operations', () => {
-    it('should add an ingredient and save to AsyncStorage', async () => {
+    it('should add an ingredient with unitType and unitQuantity, and save to AsyncStorage', async () => {
       const { result, waitForNextUpdate } = renderHook(() => useMealData());
       await waitForNextUpdate(); // Initial load
 
-      const newIngredientData = { name: 'Tomato', price: 2.5, unit: 'kg' };
+      const newIngredientData = { name: 'Tomato', price: 2.5, unitType: 'kg', unitQuantity: 1 };
       act(() => {
         result.current.addIngredient(newIngredientData);
       });
@@ -79,21 +111,35 @@ describe('useMealData Hook', () => {
       const addedIngredient = result.current.ingredients.find(ing => ing.name === 'Tomato');
       expect(addedIngredient).toBeDefined();
       expect(addedIngredient?.price).toBe(2.5);
-      expect(addedIngredient?.id).toBe('mock-uuid-1'); // First generated UUID
+      expect(addedIngredient?.unitType).toBe('kg');
+      expect(addedIngredient?.unitQuantity).toBe(1);
+      expect(addedIngredient?.id).toBe('mock-uuid-1');
 
-      // Wait for the useEffect that saves to AsyncStorage
       await waitForNextUpdate();
       const storedIngredients = JSON.parse(mockAsyncStorageData[INGREDIENTS_STORAGE_KEY]);
-      expect(storedIngredients.find((ing: Ingredient) => ing.name === 'Tomato')).toBeDefined();
+      const storedAdded = storedIngredients.find((ing: Ingredient) => ing.name === 'Tomato');
+      expect(storedAdded).toBeDefined();
+      expect(storedAdded.unitType).toBe('kg');
+      expect(storedAdded.unitQuantity).toBe(1);
     });
 
-    it('should edit an ingredient and save to AsyncStorage', async () => {
-      // Start with initial data that includes the ingredient to be edited
-      mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify([{ id: 'ing-to-edit', name: 'Old Name', price: 1, unit: 'pcs' }]);
-      const { result, waitForNextUpdate } = renderHook(() => useMealData());
-      await waitForNextUpdate(); // Initial load
+    it('should default unitQuantity to 1 if not provided or invalid when adding', async () => {
+        const { result, waitForNextUpdate } = renderHook(() => useMealData());
+        await waitForNextUpdate();
 
-      const updatedIngredientData: Ingredient = { id: 'ing-to-edit', name: 'New Name', price: 1.5, unit: 'dozen' };
+        act(() => { result.current.addIngredient({ name: 'Test Ing No Qty', price: 1, unitType: 'pcs' }); });
+        expect(result.current.ingredients.find(i => i.name === 'Test Ing No Qty')?.unitQuantity).toBe(1);
+
+        act(() => { result.current.addIngredient({ name: 'Test Ing Zero Qty', price: 1, unitType: 'pcs', unitQuantity: 0 }); });
+        expect(result.current.ingredients.find(i => i.name === 'Test Ing Zero Qty')?.unitQuantity).toBe(1);
+    });
+
+    it('should edit an ingredient with unitType and unitQuantity, and save to AsyncStorage', async () => {
+      mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify([{ id: 'ing-to-edit', name: 'Old Name', price: 1, unitType: 'pcs', unitQuantity: 1 }]);
+      const { result, waitForNextUpdate } = renderHook(() => useMealData());
+      await waitForNextUpdate();
+
+      const updatedIngredientData: Ingredient = { id: 'ing-to-edit', name: 'New Name', price: 1.5, unitType: 'dozen', unitQuantity: 12 };
       act(() => {
         result.current.editIngredient(updatedIngredientData);
       });
@@ -101,15 +147,38 @@ describe('useMealData Hook', () => {
       const editedIngredient = result.current.ingredients.find(ing => ing.id === 'ing-to-edit');
       expect(editedIngredient?.name).toBe('New Name');
       expect(editedIngredient?.price).toBe(1.5);
+      expect(editedIngredient?.unitType).toBe('dozen');
+      expect(editedIngredient?.unitQuantity).toBe(12);
 
       await waitForNextUpdate();
       const storedIngredients = JSON.parse(mockAsyncStorageData[INGREDIENTS_STORAGE_KEY]);
       const storedEdited = storedIngredients.find((ing: Ingredient) => ing.id === 'ing-to-edit');
       expect(storedEdited?.name).toBe('New Name');
+      expect(storedEdited?.unitType).toBe('dozen');
+      expect(storedEdited?.unitQuantity).toBe(12);
     });
 
+    it('should default unitQuantity to 1 if invalid value is passed during edit', async () => {
+        mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify([{ id: 'ing-edit-qty', name: 'Edit Qty', price: 1, unitType: 'pcs', unitQuantity: 5 }]);
+        const { result, waitForNextUpdate } = renderHook(() => useMealData());
+        await waitForNextUpdate();
+
+        act(() => { result.current.editIngredient({ id: 'ing-edit-qty', name: 'Edit Qty Inv', price: 1, unitType: 'pcs', unitQuantity: 0 }); });
+        expect(result.current.ingredients.find(i => i.id === 'ing-edit-qty')?.unitQuantity).toBe(1);
+
+        // Test case where unitQuantity is not provided in the update object (should retain old value due to spread, but current hook logic defaults to 1)
+        // The hook's editIngredient function, as modified, will default unitQuantity to 1 if updatedIngredient.unitQuantity is undefined or invalid.
+        // This means if the form doesn't send unitQuantity, it will reset to 1. This is acceptable.
+        act(() => { result.current.editIngredient({ id: 'ing-edit-qty', name: 'Edit Qty Undef', price: 1, unitType: 'pcs'} as any); });
+        expect(result.current.ingredients.find(i => i.id === 'ing-edit-qty')?.unitQuantity).toBe(1);
+    });
+
+
     it('should delete an ingredient and save to AsyncStorage', async () => {
-      const initialIng = [{ id: 'ing-to-delete', name: 'ToDelete', price: 1, unit: 'pcs' }, { id: 'ing-to-keep', name: 'ToKeep', price: 2, unit: 'kg'}];
+      const initialIng: Ingredient[] = [
+          { id: 'ing-to-delete', name: 'ToDelete', price: 1, unitType: 'pcs', unitQuantity: 1 },
+          { id: 'ing-to-keep', name: 'ToKeep', price: 2, unitType: 'kg', unitQuantity: 1}
+      ];
       mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify(initialIng);
       const { result, waitForNextUpdate } = renderHook(() => useMealData());
       await waitForNextUpdate();
@@ -135,15 +204,16 @@ describe('useMealData Hook', () => {
 // Helper: Get initial ingredients from the hook's module (not directly from test)
 // This requires the hook module to export them or to re-declare them here for assertion counts.
 // For simplicity, I'll use a known count based on the hook's internal initialData.
-const initialIngredients = [
-  { id: expect.any(String), name: 'Chicken Breast', price: 10, unit: 'kg' },
-  { id: expect.any(String), name: 'Broccoli', price: 3, unit: 'kg' },
-  { id: expect.any(String), name: 'Rice', price: 2, unit: 'kg' },
-  { id: expect.any(String), name: 'Olive Oil', price: 15, unit: 'liter' },
-  { id: expect.any(String), name: 'Salt', price: 1, unit: 'kg' },
-  { id: expect.any(String), name: 'Pepper', price: 5, unit: 'kg' },
+// Updated to reflect new Ingredient structure for clarity in tests.
+const initialIngredients: Ingredient[] = [
+  { id: expect.any(String), name: 'Chicken Breast', price: 10, unitType: 'kg', unitQuantity: 1 },
+  { id: expect.any(String), name: 'Broccoli', price: 3, unitType: 'kg', unitQuantity: 1 },
+  { id: expect.any(String), name: 'Rice', price: 2, unitType: 'kg', unitQuantity: 1 },
+  { id: expect.any(String), name: 'Olive Oil', price: 15, unitType: 'liter', unitQuantity: 1 },
+  { id: expect.any(String), name: 'Salt', price: 1, unitType: 'kg', unitQuantity: 1 },
+  { id: expect.any(String), name: 'Pepper', price: 5, unitType: 'kg', unitQuantity: 1 },
 ];
-const initialMeals = [ // Based on the hook's initial data
+const initialMeals = [ // Based on the hook's initial data (structure is fine)
     {
         id: expect.any(String),
         name: 'Chicken & Broccoli Stir-fry',
@@ -234,9 +304,12 @@ describe('Meal Item CRUD Operations', () => {
     beforeEach(() => {
       // Setup initial meal and ingredients for meal item tests
       const initialMealForTest: Meal[] = [{ id: mealId, name: 'Test Meal For Items', items: [{ingredientId: ingId1, amount: 100}], multiplier: 1, isIngredient: false }];
-      const initialIngredientsForTest: Ingredient[] = [{id: ingId1, name: 'Ing 1', price: 1, unit: 'g'}, {id: ingId2, name: 'Ing 2', price: 2, unit: 'pcs'}];
+      const initialIngredientsForTest: Ingredient[] = [
+          {id: ingId1, name: 'Ing 1', price: 1, unitType: 'g', unitQuantity: 1},
+          {id: ingId2, name: 'Ing 2', price: 2, unitType: 'pcs', unitQuantity: 1}
+      ];
       mockAsyncStorageData[MEALS_STORAGE_KEY] = JSON.stringify(initialMealForTest);
-      mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify(initialIngredientsForTest); // Though not directly used by meal item ops, good to have consistent env
+      mockAsyncStorageData[INGREDIENTS_STORAGE_KEY] = JSON.stringify(initialIngredientsForTest);
     });
 
     it('should add an item to a meal and save', async () => {
