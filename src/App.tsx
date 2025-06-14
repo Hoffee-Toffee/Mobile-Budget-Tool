@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from './components/ThemeProvider';
+import { ThemeProvider as CustomThemeProvider, getTheme } from './components/ThemeProvider'; // Renamed, import getTheme
 import MainScreen from './components/MainScreen';
-import { Provider } from 'react-native-paper';
+import { Provider as PaperProvider } from 'react-native-paper'; // Renamed
 import useBudgetData from './hooks/useBudgetData';
 import { BudgetContext } from './context/BudgetContext';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
@@ -32,13 +32,32 @@ const App = () => {
     }
   }, [budgetData?.settings?.theme]);
 
-  // Provide a setter for theme mode to children (e.g., TopBar)
-  const themeContextValue = useMemo(
+  // Sync themeMode with budgetData.settings.theme if it changes
+  React.useEffect(() => {
+    if (budgetData?.settings?.theme && budgetData.settings.theme !== themeMode) {
+      setThemeMode(budgetData.settings.theme);
+    }
+  }, [budgetData?.settings?.theme, themeMode]); // Added themeMode to dependencies
+
+  // Generate the theme object based on themeMode
+  const currentTheme = useMemo(() => getTheme(themeMode), [themeMode]);
+
+  // budgetContextValue for BudgetContext.Provider
+  // Theme related values (themeMode, setThemeMode) will be accessible via react-native-paper's useTheme
+  // or our useCustomTheme if CustomThemeProvider remains.
+  // For now, simplifying BudgetContext to not redundantly pass themeMode/setThemeMode
+  // if they are meant to be sourced from the theme context itself.
+  const budgetContextValue = useMemo(
     () => ({
+      budgetData,
+      setBudgetData,
+      // themeMode and setThemeMode are available via currentTheme or dedicated context if needed
+      // For components needing to *set* the theme, they'd call a function provided by BudgetContext
+      // that eventually calls setThemeMode here. For now, let's assume TopBar might need it.
       themeMode,
-      setThemeMode,
+      setThemeMode
     }),
-    [themeMode]
+    [budgetData, setBudgetData, themeMode, setThemeMode] // Added setThemeMode
   );
 
   const renderScene = SceneMap({
@@ -55,10 +74,9 @@ const App = () => {
   });
 
   return (
-    <ThemeProvider mode={themeMode}>
-      <Provider>
-        <SafeAreaProvider>
-          <BudgetContext.Provider value={{ budgetData, setBudgetData, ...themeContextValue }}>
+    <PaperProvider theme={currentTheme}>
+      <SafeAreaProvider>
+        <BudgetContext.Provider value={budgetContextValue}>
             <TabView
               navigationState={{ index, routes }}
               renderScene={renderScene}
@@ -67,29 +85,18 @@ const App = () => {
               renderTabBar={props => (
                 <TabBar
                   {...props}
-                  style={styles.tabBar}
-                  indicatorStyle={styles.indicator}
-                  labelStyle={styles.label}
+                  style={{ backgroundColor: currentTheme.colors.primary }} // Use theme from currentTheme
+                  indicatorStyle={{ backgroundColor: currentTheme.colors.surface }} // Use theme
+                  labelStyle={{ color: currentTheme.colors.onPrimary, fontWeight: 'bold' }} // Use theme
                 />
               )}
             />
           </BudgetContext.Provider>
         </SafeAreaProvider>
-      </Provider>
-    </ThemeProvider>
+      </PaperProvider>
   );
 };
 
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#6200ee', // Example primary color
-  },
-  indicator: {
-    backgroundColor: '#ffffff', // Example accent color
-  },
-  label: {
-    fontWeight: 'bold',
-  },
-});
+// const styles = StyleSheet.create({ ... }); // Old styles likely removed or adjusted
 
 export default App;

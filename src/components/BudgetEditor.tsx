@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { useTheme } from './ThemeProvider';
+import { useTheme } from 'react-native-paper'; // Changed import
 import { capitalize, formatCurrency } from '../utils/formatters';
 import { processCalculation } from '../utils/calculations';
 import { BudgetContext } from '../context/BudgetContext';

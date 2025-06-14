@@ -4,11 +4,11 @@ import { useState } from 'react';
 import currencies from '../utils/currencies';
 import { useContext } from 'react';
 import { BudgetContext } from '../context/BudgetContext';
-import { useTheme } from './ThemeProvider';
+import { useTheme } from 'react-native-paper'; // Changed import
 
 const TopBar = () => {
   const { budgetData, setBudgetData, themeMode, setThemeMode } = useContext(BudgetContext);
-  const theme = useTheme();
+  const theme = useTheme(); // Now from react-native-paper
   const [currencyMenuVisible, setCurrencyMenuVisible] = useState(false);
 
   const { settings: { title: budgetTitle, theme: budgetTheme, currency: selectedCurrency } } = budgetData;

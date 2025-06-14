@@ -1,16 +1,15 @@
 import { processCalculation } from '../utils/calculations';
 import { View, Text } from 'react-native';
-import { Checkbox, IconButton, TextInput } from 'react-native-paper';
+import { Checkbox, IconButton, TextInput, useTheme } from 'react-native-paper'; // Changed import
 import { useState } from 'react';
 import { formatCurrency } from '../utils/formatters';
 import CalculationEditor from './CalculationEditor';
-import { useTheme } from './ThemeProvider';
 
 const ItemEditor = ({ section, item, setBudgetData }) => {
   const [title, setTitle] = useState(item.name);
   const [editVisible, setEditVisible] = useState(false);
 
-  const theme = useTheme();
+  const theme = useTheme(); // Now from react-native-paper
 
   const styles = {
     row: {

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList } from 'react-native';
-import { Button, Modal, Portal, Provider as PaperProvider, ActivityIndicator, Card, Title, Paragraph, TextInput, Checkbox } from 'react-native-paper';
+import { Button, Modal, Portal, Provider as PaperProvider, ActivityIndicator, Card, Title, Paragraph, TextInput, Checkbox, useTheme } from 'react-native-paper'; // Changed import
 import useMealData, { Meal, Ingredient, MealItem } from '../hooks/useMealData';
-import { useTheme } from './ThemeProvider'; // Assuming you have a ThemeProvider
 import ScreenWrapper from './ScreenWrapper'; // Import the actual ScreenWrapper
 import { calculateIngredientPrice, calculateMealTotalPrice } from '../utils/mealPriceCalculator'; // Import new calc functions
 
@@ -22,7 +21,7 @@ const MealPlannerScreen: React.FC = () => {
     deleteMealItem,
   } = useMealData();
 
-  const theme = useTheme();
+  const theme = useTheme(); // Now from react-native-paper
   const [mealModalVisible, setMealModalVisible] = useState(false);
 
   // States for Add/Edit Meal Modal

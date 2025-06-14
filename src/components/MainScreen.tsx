@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { ScrollView, KeyboardAvoidingView, Platform, View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; // Add SafeAreaView
-import { useTheme } from './ThemeProvider';
+import { useTheme } from 'react-native-paper'; // Changed import
 import TopBar from './TopBar';
 import BudgetEditor from './BudgetEditor';
 import BottomBar from './BottomBar';

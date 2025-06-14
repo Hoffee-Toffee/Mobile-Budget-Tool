@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../ThemeProvider';
+import { useTheme } from 'react-native-paper'; // Changed import
 import BudgetSectionHeader from './BudgetSectionHeader';
 import BudgetSectionFooter from './BudgetSectionFooter';
 import ItemEditor from '../ItemEditor'; // Assuming ItemEditor is used to render items

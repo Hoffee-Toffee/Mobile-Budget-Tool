@@ -1,7 +1,6 @@
 import { View, Text, ScrollView } from 'react-native';
-import { Modal, Portal, TextInput, IconButton, Button, Dialog, Paragraph } from 'react-native-paper';
+import { Modal, Portal, TextInput, IconButton, Button, Dialog, Paragraph, useTheme } from 'react-native-paper'; // Changed import
 import { useState, useEffect, useRef } from 'react';
-import { useTheme } from './ThemeProvider';
 
 const CalculationEditor = ({
   visible,

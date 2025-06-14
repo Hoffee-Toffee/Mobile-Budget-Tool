@@ -52,18 +52,6 @@ export const getTheme = (mode: 'light' | 'dark' = 'light') => ({
   colors: (mode === 'dark' ? darkColors : lightColors)
 });
 
-export const ThemeContext = createContext(getTheme('light'));
-
-export const ThemeProvider = ({
-  children,
-  mode = 'light',
-}: {
-  children: ReactNode;
-  mode?: 'light' | 'dark';
-}) => {
-  const theme = useMemo(() => getTheme(mode), [mode]);
-  console.log(theme)
-  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
-};
-
-export const useTheme = () => useContext(ThemeContext);
+// ThemeContext, ThemeProvider, and custom useTheme are no longer needed here.
+// react-native-paper's Provider and useTheme hook are used instead.
+// This file now primarily serves to define and export getTheme and its color/style definitions.

@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '../ThemeProvider';
+import { useTheme } from 'react-native-paper'; // Changed import
 
 const BudgetSectionHeader: React.FC = () => {
-  const theme = useTheme();
+  const theme = useTheme(); // Now from react-native-paper
 
   const styles = StyleSheet.create({
     tableHeader: {

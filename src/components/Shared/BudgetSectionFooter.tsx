@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Button } from 'react-native-paper';
-import { useTheme } from '../ThemeProvider';
+import { Button, useTheme } from 'react-native-paper'; // Changed import
 
 interface BudgetSectionFooterProps {
   onAddItem: () => void;
