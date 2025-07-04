@@ -5,6 +5,7 @@ import MainScreen from './components/MainScreen';
 import { Provider } from 'react-native-paper';
 import useBudgetData from './hooks/useBudgetData';
 import { BudgetContext } from './context/BudgetContext';
+import { StatusBar } from 'expo-status-bar';
 
 const App = () => {
   const { budgetData, setBudgetData } = useBudgetData();
@@ -36,6 +37,7 @@ const App = () => {
         <SafeAreaProvider>
           <BudgetContext.Provider value={{ budgetData, setBudgetData, ...themeContextValue }}>
             <SafeAreaView style={{ flex: 1 }} edges={['top', 'right', 'bottom', 'left']}>
+              <StatusBar style={themeMode === 'dark' ? 'light' : 'dark'} />
               <MainScreen />
             </SafeAreaView>
           </BudgetContext.Provider>
