@@ -1,9 +1,9 @@
 import { View } from 'react-native';
 import { Text, Menu, Button, Icon, IconButton, TextInput } from 'react-native-paper';
 import { useState } from 'react';
-import currencies from '../utils/currencies';
+import currencies from './utils/currencies';
 import { useContext } from 'react';
-import { BudgetContext } from '../context/BudgetContext';
+import { BudgetContext } from './context/BudgetContext';
 import { useTheme } from 'react-native-paper'; // Changed import
 
 const TopBar = () => {

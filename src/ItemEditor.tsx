@@ -1,8 +1,8 @@
-import { processCalculation } from '../utils/calculations';
+import { processCalculation } from './utils/calculations';
 import { View, Text } from 'react-native';
 import { Checkbox, IconButton, TextInput, useTheme } from 'react-native-paper'; // Changed import
 import { useState } from 'react';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency } from './utils/formatters';
 import CalculationEditor from './CalculationEditor';
 
 const ItemEditor = ({ section, item, setBudgetData }) => {

@@ -1,131 +1,102 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState, useMemo } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getTheme } from './src/ThemeProvider'; // Renamed, import getTheme
+import MainScreen from './src/MainScreen';
+import { Provider as PaperProvider } from 'react-native-paper'; // Renamed
+import useBudgetData from './src/hooks/useBudgetData';
+import { BudgetContext } from './src/context/BudgetContext';
+import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { useWindowDimensions } from 'react-native';
+import ScreenWrapper from './src/ScreenWrapper';
+import MealPlannerScreen from './src/MealPlannerScreen';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const App = () => {
+  const { budgetData, setBudgetData } = useBudgetData();
+  const layout = useWindowDimensions();
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: 'budget', title: 'Budget' },
+    { key: 'mealPlanner', title: 'Meal Planner' },
+  ]);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+  // Track theme mode in state, default to budgetData.settings.theme or 'light'
+  const [themeMode, setThemeMode] = useState(
+    budgetData?.settings?.theme === 'dark' ? 'dark' : 'light'
   );
-}
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  // Sync themeMode with budgetData.settings.theme if it changes
+  React.useEffect(() => {
+    if (budgetData?.settings?.theme && budgetData.settings.theme !== themeMode) {
+      setThemeMode(budgetData.settings.theme);
+    }
+  }, [budgetData?.settings?.theme]);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  // Sync themeMode with budgetData.settings.theme if it changes
+  React.useEffect(() => {
+    if (budgetData?.settings?.theme && budgetData.settings.theme !== themeMode) {
+      setThemeMode(budgetData.settings.theme);
+    }
+  }, [budgetData?.settings?.theme, themeMode]); // Added themeMode to dependencies
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
+  // Generate the theme object based on themeMode
+  const currentTheme = useMemo(() => getTheme(themeMode), [themeMode]);
+
+  // budgetContextValue for BudgetContext.Provider
+  // Theme related values (themeMode, setThemeMode) will be accessible via react-native-paper's useTheme
+  // or our useCustomTheme if CustomThemeProvider remains.
+  // For now, simplifying BudgetContext to not redundantly pass themeMode/setThemeMode
+  // if they are meant to be sourced from the theme context itself.
+  const budgetContextValue = useMemo(
+    () => ({
+      budgetData,
+      setBudgetData,
+      // themeMode and setThemeMode are available via currentTheme or dedicated context if needed
+      // For components needing to *set* the theme, they'd call a function provided by BudgetContext
+      // that eventually calls setThemeMode here. For now, let's assume TopBar might need it.
+      themeMode,
+      setThemeMode
+    }),
+    [budgetData, setBudgetData, themeMode, setThemeMode] // Added setThemeMode
+  );
+
+  const renderScene = SceneMap({
+    budget: () => (
+      <ScreenWrapper>
+        <MainScreen />
+      </ScreenWrapper>
+    ),
+    mealPlanner: () => (
+      <ScreenWrapper>
+        <MealPlannerScreen />
+      </ScreenWrapper>
+    ),
+  });
 
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
-        </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </View>
+    <PaperProvider theme={currentTheme}>
+      <SafeAreaProvider>
+        <BudgetContext.Provider value={budgetContextValue}>
+          <TabView
+            navigationState={{ index, routes }}
+            renderScene={renderScene}
+            onIndexChange={setIndex}
+            initialLayout={{ width: layout.width }}
+            renderTabBar={props => (
+              <TabBar
+                {...props}
+                style={{ backgroundColor: currentTheme.colors.primary }} // Use theme from currentTheme
+                indicatorStyle={{ backgroundColor: currentTheme.colors.surface }} // Use theme
+                labelStyle={{ color: currentTheme.colors.onPrimary, fontWeight: 'bold' }} // Use theme
+              />
+            )}
+          />
+        </BudgetContext.Provider>
+      </SafeAreaProvider>
+    </PaperProvider>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+// const styles = StyleSheet.create({ ... }); // Old styles likely removed or adjusted
 
 export default App;

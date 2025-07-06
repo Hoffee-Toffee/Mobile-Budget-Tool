@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { Button, Modal, Portal, Provider as PaperProvider, ActivityIndicator, Card, Title, Paragraph, TextInput, Checkbox, useTheme } from 'react-native-paper'; // Changed import
-import useMealData, { Meal, Ingredient, MealItem } from '../hooks/useMealData';
+import useMealData, { Meal, Ingredient, MealItem } from './hooks/useMealData';
 import ScreenWrapper from './ScreenWrapper'; // Import the actual ScreenWrapper
-import { calculateIngredientPrice, calculateMealTotalPrice } from '../utils/mealPriceCalculator'; // Import new calc functions
+import { calculateIngredientPrice, calculateMealTotalPrice } from './utils/mealPriceCalculator'; // Import new calc functions
 
 const MealPlannerScreen: React.FC = () => {
   const {
@@ -100,7 +100,7 @@ const MealPlannerScreen: React.FC = () => {
     // This function updates the local currentMeal state.
     // The actual deletion from the meal in useMealData hook happens when the meal is saved.
     const updatedItems = (currentMeal.items || []).filter(item => item.ingredientId !== ingredientIdToDelete);
-    setCurrentMeal(prev => ({...(prev || {}), items: updatedItems}));
+    setCurrentMeal(prev => ({ ...(prev || {}), items: updatedItems }));
   };
 
   const handleSaveIngredient = () => {
@@ -160,11 +160,11 @@ const MealPlannerScreen: React.FC = () => {
           Total Price: ${calculateMealTotalPrice(meal, ingredients, meals).toFixed(2)}
         </Paragraph>
         <View style={styles.checkboxContainer}>
-            <Text>Is Ingredient:</Text>
-            <Checkbox
-                status={meal.isIngredient ? 'checked' : 'unchecked'}
-                onPress={() => editMeal({ ...meal, isIngredient: !meal.isIngredient })}
-            />
+          <Text>Is Ingredient:</Text>
+          <Checkbox
+            status={meal.isIngredient ? 'checked' : 'unchecked'}
+            onPress={() => editMeal({ ...meal, isIngredient: !meal.isIngredient })}
+          />
         </View>
       </Card.Content>
       <Card.Actions>

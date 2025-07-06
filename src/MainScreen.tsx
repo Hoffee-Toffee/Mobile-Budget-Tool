@@ -5,7 +5,7 @@ import { useTheme } from 'react-native-paper'; // Changed import
 import TopBar from './TopBar';
 import BudgetEditor from './BudgetEditor';
 import BottomBar from './BottomBar';
-import { BudgetContext } from '../context/BudgetContext';
+import { BudgetContext } from './context/BudgetContext';
 
 const MainScreen = () => {
   const { budgetData, setBudgetData } = useContext(BudgetContext);

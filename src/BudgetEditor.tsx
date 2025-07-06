@@ -1,11 +1,11 @@
 import React, { useContext } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useTheme } from 'react-native-paper'; // Changed import
-import { capitalize, formatCurrency } from '../utils/formatters';
-import { processCalculation } from '../utils/calculations';
-import { BudgetContext } from '../context/BudgetContext';
+import { capitalize, formatCurrency } from './utils/formatters';
+import { processCalculation } from './utils/calculations';
+import { BudgetContext } from './context/BudgetContext';
 import BudgetSection from './Shared/BudgetSection'; // Import the new shared component
-import { Item } from '../../types'; // Corrected path for Item
+import { Item } from './types'; // Corrected path for Item
 
 const BudgetEditor = () => {
   const { budgetData, setBudgetData } = useContext(BudgetContext);
