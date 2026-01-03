@@ -1,11 +1,6 @@
 // Get 'currency' from the context provider
-import {useContext} from 'react';
-import {BudgetContext} from '../context/BudgetContext';
 
-export const formatCurrency = (value: number): string => {
-  const {budgetData} = useContext(BudgetContext);
-  const currency = budgetData?.settings?.currency;
-
+export const formatCurrency = (value: number, currency?: string): string => {
   if (!currency) {
     return value.toString();
   }
@@ -41,4 +36,12 @@ export const formatNumber = (value: number): string => {
 
 export const capitalize = (str: string): string => {
   return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+export const periodData = {
+  w: {label: 'week', factor: 1},
+  f: {label: 'fortnight', factor: 2},
+  m: {label: 'month', factor: 4.348125},
+  q: {label: 'quarter', factor: 13.044375},
+  y: {label: 'year', factor: 52.1775},
 };

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeProvider } from './components/ThemeProvider';
 import MainScreen from './components/MainScreen';
@@ -31,17 +32,19 @@ const App = () => {
   );
 
   return (
-    <ThemeProvider mode={themeMode}>
-      <Provider>
-        <SafeAreaProvider>
-          <BudgetContext.Provider value={{ budgetData, setBudgetData, ...themeContextValue }}>
-            <SafeAreaView style={{ flex: 1 }} edges={['top', 'right', 'bottom', 'left']}>
-              <MainScreen />
-            </SafeAreaView>
-          </BudgetContext.Provider>
-        </SafeAreaProvider>
-      </Provider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider mode={themeMode}>
+        <Provider>
+          <SafeAreaProvider>
+            <BudgetContext.Provider value={{ budgetData, setBudgetData, ...themeContextValue }}>
+              <SafeAreaView style={{ flex: 1 }} edges={['top', 'right', 'bottom', 'left']}>
+                <MainScreen />
+              </SafeAreaView>
+            </BudgetContext.Provider>
+          </SafeAreaProvider>
+        </Provider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 };
 

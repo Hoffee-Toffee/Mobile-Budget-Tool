@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import { Text, Menu, Button, Icon, IconButton, TextInput } from 'react-native-paper';
+import { ScrollView } from 'react-native';
 import { useState } from 'react';
 import currencies from '../utils/currencies';
 import { useContext } from 'react';
@@ -124,20 +125,22 @@ const TopBar = () => {
             </Button>
           }
           style={styles.currencyMenu}
-          contentStyle={styles.currencyMenuContent}
+          contentStyle={[styles.currencyMenuContent, { maxHeight: 320 }]}
         >
-          {currencies.map((currency) => (
-            <Menu.Item
-              key={currency.value}
-              onPress={() => {
-                saveSetting('currency', currency.value);
-                closeMenu();
-              }}
-              title={currency.label}
-              titleStyle={{ color: theme.colors.text }}
-              style={{ backgroundColor: theme.colors.background }}
-            />
-          ))}
+          <ScrollView style={{ maxHeight: 300 }}>
+            {currencies.map((currency) => (
+              <Menu.Item
+                key={currency.value}
+                onPress={() => {
+                  saveSetting('currency', currency.value);
+                  closeMenu();
+                }}
+                title={currency.label}
+                titleStyle={{ color: theme.colors.text }}
+                style={{ backgroundColor: theme.colors.background }}
+              />
+            ))}
+          </ScrollView>
         </Menu>
         <IconButton
           icon={themeMode === 'dark' ? 'weather-night' : 'white-balance-sunny'}

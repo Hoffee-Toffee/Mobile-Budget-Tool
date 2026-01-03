@@ -1,9 +1,10 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { NestableScrollContainer, NestableDraggableFlatList } from 'react-native-draggable-flatlist';
 import { useTheme } from './ThemeProvider';
 import ItemEditor from './ItemEditor';
 import { capitalize, formatCurrency } from '../utils/formatters';
 import { processCalculation } from '../utils/calculations';
-import { useContext } from 'react';
+import { useContext, useMemo } from 'react';
 import { BudgetContext } from '../context/BudgetContext';
 import { Button } from 'react-native-paper';
 
@@ -19,23 +20,25 @@ const BudgetEditor = () => {
     );
   }
 
-  let sections = Object.entries(budgetData).filter(([key]) => key !== 'settings');
-  const sectionTotal = (items) =>
-    formatCurrency(
-      items.filter(item => item.active).reduce(
-        (total, item) =>
-          total + (processCalculation(item).res || 0),
-        0
-      )
-    );
+  let sections = useMemo(() => Object.entries(budgetData).filter(([key]) => key !== 'settings'), [budgetData]);
 
-  // Helper to get raw total (number) for calculations
-  const sectionRawTotal = (items) =>
-    items.filter(item => item.active).reduce(
-      (total, item) =>
-        total + (processCalculation(item).res || 0),
-      0
-    );
+
+  // Get currency from context
+  const currency = budgetData?.settings?.currency;
+
+  // Memoize totals for each section
+  const sectionTotals = useMemo(() => {
+    const totals: Record<string, { total: string; raw: number }> = {};
+    for (const [section, items] of sections) {
+      const filtered = items.filter((item: any) => item.active);
+      const raw = filtered.reduce((total: number, item: any) => total + (processCalculation(item).res || 0), 0);
+      totals[section] = { total: formatCurrency(raw, currency), raw };
+    }
+    return totals;
+  }, [sections, currency]);
+
+  const sectionTotal = (items: any[], section: string) => sectionTotals[section]?.total || formatCurrency(0, currency);
+  const sectionRawTotal = (items: any[], section: string) => sectionTotals[section]?.raw || 0;
 
   const addItem = (section, items) => {
     const newItem = {
@@ -59,9 +62,9 @@ const BudgetEditor = () => {
   const importantSection = getSection('important');
   const voluntarySection = getSection('voluntary');
 
-  const incomeTotal = incomeSection ? sectionRawTotal(incomeSection[1]) : 0;
-  const importantTotal = importantSection ? sectionRawTotal(importantSection[1]) : 0;
-  const voluntaryTotal = voluntarySection ? sectionRawTotal(voluntarySection[1]) : 0;
+  const incomeTotal = incomeSection ? sectionRawTotal(incomeSection[1], 'income') : 0;
+  const importantTotal = importantSection ? sectionRawTotal(importantSection[1], 'important') : 0;
+  const voluntaryTotal = voluntarySection ? sectionRawTotal(voluntarySection[1], 'voluntary') : 0;
 
   const leftover = incomeTotal - importantTotal;
   const finalLeftover = incomeTotal - importantTotal - voluntaryTotal;
@@ -157,7 +160,7 @@ const BudgetEditor = () => {
   console.log(styles)
 
   return (
-    <ScrollView style={{ backgroundColor: theme.colors.background }}>
+    <NestableScrollContainer style={{ backgroundColor: theme.colors.background }}>
       {sections.map(([section, items], idx) => (
         <View key={section} style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{capitalize(section)}</Text>
@@ -169,11 +172,31 @@ const BudgetEditor = () => {
             </View>
             <Text style={[styles.headerCalculation, { color: theme.colors.text }]}>Calculation</Text>
             <View style={styles.headerOptions}></View>
-          </View>
-          {/* Table Rows */}
-          {items.map((item: any) => (
-            <ItemEditor key={item.name} section={section} item={item} setBudgetData={setBudgetData} />
-          ))}
+          </View>          {/* Table Rows with Drag-and-Drop */}
+          <NestableDraggableFlatList
+            data={items}
+            keyExtractor={(item) => item.name}
+            renderItem={({ item, drag, isActive }) => (
+              <ItemEditor
+                key={item.name}
+                section={section}
+                item={item}
+                setBudgetData={setBudgetData}
+                drag={drag}
+                isActive={isActive}
+                currency={currency}
+              />
+            )}
+            onDragEnd={({ data }) => {
+              setBudgetData((prevData) => ({
+                ...prevData,
+                [section]: data,
+              }));
+            }}
+            activationDistance={1}
+            containerStyle={{ backgroundColor: theme.colors.background }}
+            scrollEnabled={false}
+          />
           {/* Table Footer */}
           <View style={styles.tableFooter}>
             {/* Add Item Button */}
@@ -199,7 +222,7 @@ const BudgetEditor = () => {
             <View style={styles.totalValue}>
               <Text>
                 <Text style={[styles.totalValueText, { color: theme.colors.green }]}>
-                  {sectionTotal(items)}</Text>
+                  {sectionTotal(items, section)}</Text>
                 <Text style={{ color: theme.colors.text }}>pw</Text>
               </Text>
             </View>
@@ -212,7 +235,7 @@ const BudgetEditor = () => {
           {section.toLowerCase() === 'important' && (
             <View style={{ marginBottom: 12, marginTop: 8, marginLeft: 4 }}>
               <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
-                (Leftover: <Text style={{ color: theme.colors.green }}>{formatCurrency(leftover)}</Text>pw)
+                (Leftover: <Text style={{ color: theme.colors.green }}>{formatCurrency(leftover, currency)}</Text>pw)
               </Text>
             </View>
           )}
@@ -220,13 +243,13 @@ const BudgetEditor = () => {
           {section.toLowerCase() === 'voluntary' && (
             <View style={{ marginBottom: 12, marginTop: 8, marginLeft: 4 }}>
               <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
-                (Final Leftover: <Text style={{ color: (finalLeftover <= 0 ? theme.colors.red : (finalLeftover <= 25 ? theme.colors.orange : (finalLeftover <= 50 ? theme.colors.yellow : theme.colors.green))) }}>{formatCurrency(finalLeftover)}</Text>pw)
+                (Final Leftover: <Text style={{ color: (finalLeftover <= 0 ? theme.colors.red : (finalLeftover <= 25 ? theme.colors.orange : (finalLeftover <= 50 ? theme.colors.yellow : theme.colors.green))) }}>{formatCurrency(finalLeftover, currency)}</Text>pw)
               </Text>
             </View>
           )}
         </View>
       ))}
-    </ScrollView>
+    </NestableScrollContainer>
   );
 };
 

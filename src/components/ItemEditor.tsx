@@ -6,7 +6,7 @@ import { formatCurrency } from '../utils/formatters';
 import CalculationEditor from './CalculationEditor';
 import { useTheme } from './ThemeProvider';
 
-const ItemEditor = ({ section, item, setBudgetData }) => {
+const ItemEditor = ({ section, item, setBudgetData, drag, isActive, currency }) => {
   const [title, setTitle] = useState(item.name);
   const [editVisible, setEditVisible] = useState(false);
 
@@ -107,7 +107,7 @@ const ItemEditor = ({ section, item, setBudgetData }) => {
   };
 
   const calculation = processCalculation(item);
-  const res = formatCurrency(calculation.res || 0);
+  const res = formatCurrency(calculation.res || 0, currency);
 
   const setItemProp = (key, value) => {
     setBudgetData((prevData) => ({
@@ -125,18 +125,25 @@ const ItemEditor = ({ section, item, setBudgetData }) => {
       <View
         style={[
           styles.row,
-          { opacity: item.active ? 1 : 0.5, backgroundColor: theme.colors.background }
+          {
+            opacity: item.active ? 1 : 0.5,
+            backgroundColor: isActive ? theme.colors.primary + '33' : theme.colors.background,
+          },
         ]}
       >
         {/* Drag Handle */}
         {/* Title */}
         <View style={styles.titleGroup}>
-          <IconButton
-            icon="drag-horizontal-variant"
-            size={20}
-            iconColor={theme.colors.text}
-            style={styles.dragHandle}
-          />
+          <View collapsable={false} style={{ justifyContent: 'center' }}>
+            <IconButton
+              icon="drag-horizontal-variant"
+              size={20}
+              iconColor={theme.colors.text}
+              style={[styles.dragHandle, isActive && { opacity: 1 }]}
+              onLongPress={drag}
+              disabled={false}
+            />
+          </View>
           <TextInput
             value={title}
             onChangeText={setTitle}
@@ -170,7 +177,7 @@ const ItemEditor = ({ section, item, setBudgetData }) => {
             size={20}
             onPress={() => setEditVisible(true)}
             iconColor={theme.colors.text}
-            style={{ backgroundColor: theme.colors.background }}
+            style={{ backgroundColor: 'transparent' }}
           />
         </View>
       </View>
