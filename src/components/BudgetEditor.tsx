@@ -1,16 +1,18 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { NestableScrollContainer, NestableDraggableFlatList } from 'react-native-draggable-flatlist';
+import { NestableDraggableFlatList, NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useTheme } from './ThemeProvider';
 import ItemEditor from './ItemEditor';
 import { capitalize, formatCurrency } from '../utils/formatters';
 import { processCalculation } from '../utils/calculations';
-import { useContext, useMemo } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { BudgetContext } from '../context/BudgetContext';
-import { Button } from 'react-native-paper';
+import { Menu, Button } from 'react-native-paper';
+import { presets } from '../utils/presets';
 
 const BudgetEditor = () => {
   const { budgetData, setBudgetData } = useContext(BudgetContext);
   const theme = useTheme();
+  // Removed preset dropdown state from main screen
 
   if (!budgetData) {
     return (
@@ -22,11 +24,20 @@ const BudgetEditor = () => {
 
   let sections = useMemo(() => Object.entries(budgetData).filter(([key]) => key !== 'settings'), [budgetData]);
 
-
   // Get currency from context
   const currency = budgetData?.settings?.currency;
 
-  // Memoize totals for each section
+  // Create a stable hash for each section's items based on their values, not order
+  const sectionHashes = useMemo(() => {
+    return Object.fromEntries(
+      sections.map(([section, items]) => [
+        section,
+        items.map(i => `${i.name}|${i.calc}|${i.res}|${i.active}`).join(',')
+      ])
+    );
+  }, [sections]);
+
+  // Memoize totals for each section, only recalculating when values change
   const sectionTotals = useMemo(() => {
     const totals: Record<string, { total: string; raw: number }> = {};
     for (const [section, items] of sections) {
@@ -35,7 +46,7 @@ const BudgetEditor = () => {
       totals[section] = { total: formatCurrency(raw, currency), raw };
     }
     return totals;
-  }, [sections, currency]);
+  }, [sectionHashes, currency]);
 
   const sectionTotal = (items: any[], section: string) => sectionTotals[section]?.total || formatCurrency(0, currency);
   const sectionRawTotal = (items: any[], section: string) => sectionTotals[section]?.raw || 0;
@@ -160,7 +171,7 @@ const BudgetEditor = () => {
   console.log(styles)
 
   return (
-    <NestableScrollContainer style={{ backgroundColor: theme.colors.background }}>
+    <View style={{ backgroundColor: theme.colors.background }}>
       {sections.map(([section, items], idx) => (
         <View key={section} style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{capitalize(section)}</Text>
@@ -172,31 +183,34 @@ const BudgetEditor = () => {
             </View>
             <Text style={[styles.headerCalculation, { color: theme.colors.text }]}>Calculation</Text>
             <View style={styles.headerOptions}></View>
-          </View>          {/* Table Rows with Drag-and-Drop */}
-          <NestableDraggableFlatList
-            data={items}
-            keyExtractor={(item) => item.name}
-            renderItem={({ item, drag, isActive }) => (
-              <ItemEditor
-                key={item.name}
-                section={section}
-                item={item}
-                setBudgetData={setBudgetData}
-                drag={drag}
-                isActive={isActive}
-                currency={currency}
-              />
-            )}
-            onDragEnd={({ data }) => {
-              setBudgetData((prevData) => ({
-                ...prevData,
-                [section]: data,
-              }));
-            }}
-            activationDistance={1}
-            containerStyle={{ backgroundColor: theme.colors.background }}
-            scrollEnabled={false}
-          />
+          </View>
+          {/* Table Rows with Drag-and-Drop */}
+          <NestableScrollContainer style={{ backgroundColor: theme.colors.background }}>
+            <NestableDraggableFlatList
+              data={items}
+              keyExtractor={(item) => item.name}
+              renderItem={({ item, drag, isActive }) => (
+                <ItemEditor
+                  key={item.name}
+                  section={section}
+                  item={item}
+                  setBudgetData={setBudgetData}
+                  drag={drag}
+                  isActive={isActive}
+                  currency={currency}
+                />
+              )}
+              onDragEnd={({ data }) => {
+                setBudgetData((prevData) => ({
+                  ...prevData,
+                  [section]: data,
+                }));
+              }}
+              activationDistance={8}
+              containerStyle={{ backgroundColor: theme.colors.background }}
+              scrollEnabled={true}
+            />
+          </NestableScrollContainer>
           {/* Table Footer */}
           <View style={styles.tableFooter}>
             {/* Add Item Button */}
@@ -209,9 +223,8 @@ const BudgetEditor = () => {
                 contentStyle={styles.addItemContent}
                 labelStyle={styles.addItemLabel}
                 onPress={() => addItem(section, items)}
-
               >
-                Add Item
+                <Text style={{ color: theme.colors.text }}>Add Item</Text>
               </Button>
             </View>
             {/* Total label right-aligned */}
@@ -221,8 +234,7 @@ const BudgetEditor = () => {
             {/* Total value left-aligned and green */}
             <View style={styles.totalValue}>
               <Text>
-                <Text style={[styles.totalValueText, { color: theme.colors.green }]}>
-                  {sectionTotal(items, section)}</Text>
+                <Text style={[styles.totalValueText, { color: theme.colors.green }]}> {sectionTotal(items, section)}</Text>
                 <Text style={{ color: theme.colors.text }}>pw</Text>
               </Text>
             </View>
@@ -249,7 +261,7 @@ const BudgetEditor = () => {
           )}
         </View>
       ))}
-    </NestableScrollContainer>
+    </View>
   );
 };
 

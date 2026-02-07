@@ -70,7 +70,6 @@ const TopBar = () => {
       backgroundColor: theme.colors.background,
     },
     currencyMenuContent: {
-      height: 520,
       backgroundColor: theme.colors.background,
     },
     themeToggle: {

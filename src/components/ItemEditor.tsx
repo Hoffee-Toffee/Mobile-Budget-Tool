@@ -1,5 +1,5 @@
 import { processCalculation } from '../utils/calculations';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Checkbox, IconButton, TextInput } from 'react-native-paper';
 import { useState } from 'react';
 import { formatCurrency } from '../utils/formatters';
@@ -123,38 +123,42 @@ const ItemEditor = ({ section, item, setBudgetData, drag, isActive, currency }) 
   return (
     <>
       <View
-        style={[
+        style={[ 
           styles.row,
           {
             opacity: item.active ? 1 : 0.5,
             backgroundColor: isActive ? theme.colors.primary + '33' : theme.colors.background,
           },
         ]}
+        pointerEvents="box-none"
       >
         {/* Drag Handle */}
-        {/* Title */}
         <View style={styles.titleGroup}>
-          <View collapsable={false} style={{ justifyContent: 'center' }}>
+          <TouchableOpacity
+            onLongPress={drag}
+            activeOpacity={0.6}
+            pointerEvents="box-only"
+          >
             <IconButton
               icon="drag-horizontal-variant"
               size={20}
               iconColor={theme.colors.text}
               style={[styles.dragHandle, isActive && { opacity: 1 }]}
-              onLongPress={drag}
               disabled={false}
             />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              onBlur={() => setItemProp('name', title)}
+              mode="outlined"
+              style={{ ...styles.titleInput, color: theme.colors.text, backgroundColor: theme.colors.background }}
+              contentStyle={{ color: theme.colors.text }}
+              onSubmitEditing={() => setItemProp('name', title)}
+              returnKeyType="done"
+            />
           </View>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            onBlur={() => setItemProp('name', title)}
-            mode="outlined"
-            style={{ ...styles.titleInput, color: theme.colors.text, backgroundColor: theme.colors.background }}
-            contentStyle={{ color: theme.colors.text }}
-            onSubmitEditing={() => setItemProp('name', title)}
-            returnKeyType="done"
-          />
-
         </View>
         {/* Active Checkbox */}
         <View style={styles.checkboxCell}>
