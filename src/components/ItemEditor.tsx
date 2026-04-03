@@ -6,7 +6,7 @@ import { formatCurrency } from '../utils/formatters';
 import CalculationEditor from './CalculationEditor';
 import { useTheme } from './ThemeProvider';
 
-const ItemEditor = ({ section, item, setBudgetData, drag, isActive, currency }) => {
+const ItemEditor = ({ section, item, setBudgetData, drag, isActive, currency, outputPeriod }) => {
   const [title, setTitle] = useState(item.name);
   const [editVisible, setEditVisible] = useState(false);
 
@@ -107,7 +107,12 @@ const ItemEditor = ({ section, item, setBudgetData, drag, isActive, currency }) 
   };
 
   const calculation = processCalculation(item);
-  const res = formatCurrency(calculation.res || 0, currency);
+  // Convert result to output period (global)
+  const periodDataObj = require('../utils/formatters').periodData;
+  const factor = periodDataObj[outputPeriod]?.factor || 1;
+  const convertedRes = (calculation.res || 0) * factor;
+  const res = formatCurrency(convertedRes, currency);
+  const getPeriodLabel = (period: string) => `p${period}`;
 
   const setItemProp = (key, value) => {
     setBudgetData((prevData) => ({
@@ -172,7 +177,7 @@ const ItemEditor = ({ section, item, setBudgetData, drag, isActive, currency }) 
         {/* Calculation */}
         <Text style={styles.calculation}>
           <Text style={{ color: theme.colors.green }}>{res}</Text>
-          <Text style={{ color: theme.colors.text }}>pw</Text>
+          <Text style={{ color: theme.colors.text }}>{getPeriodLabel(outputPeriod)}</Text>
         </Text>
         {/* Edit */}
         <View style={styles.options}>

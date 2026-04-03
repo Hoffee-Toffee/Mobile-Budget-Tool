@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { NestableDraggableFlatList, NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useTheme } from './ThemeProvider';
 import ItemEditor from './ItemEditor';
-import { capitalize, formatCurrency } from '../utils/formatters';
+import { capitalize, formatCurrency, periodData } from '../utils/formatters';
 import { processCalculation } from '../utils/calculations';
 import { useContext, useMemo, useState } from 'react';
 import { BudgetContext } from '../context/BudgetContext';
@@ -24,8 +24,9 @@ const BudgetEditor = () => {
 
   let sections = useMemo(() => Object.entries(budgetData).filter(([key]) => key !== 'settings'), [budgetData]);
 
-  // Get currency from context
+  // Get currency and output period from context
   const currency = budgetData?.settings?.currency;
+  const outputPeriod = budgetData?.settings?.outputPeriod || 'w';
 
   // Create a stable hash for each section's items based on their values, not order
   const sectionHashes = useMemo(() => {
@@ -42,21 +43,39 @@ const BudgetEditor = () => {
     const totals: Record<string, { total: string; raw: number }> = {};
     for (const [section, items] of sections) {
       const filtered = items.filter((item: any) => item.active);
-      const raw = filtered.reduce((total: number, item: any) => total + (processCalculation(item).res || 0), 0);
+      // Convert all results to the selected output period
+      const raw = filtered.reduce((total: number, item: any) => {
+        const calc = processCalculation(item);
+        // Convert from weekly to outputPeriod
+        const periodDataObj = require('../utils/formatters').periodData;
+        const factor = periodDataObj[outputPeriod]?.factor || 1;
+        const weekly = calc.res || 0;
+        const converted = weekly * factor;
+        return total + converted;
+      }, 0);
       totals[section] = { total: formatCurrency(raw, currency), raw };
     }
     return totals;
-  }, [sectionHashes, currency]);
+  }, [sectionHashes, currency, outputPeriod]);
 
   const sectionTotal = (items: any[], section: string) => sectionTotals[section]?.total || formatCurrency(0, currency);
   const sectionRawTotal = (items: any[], section: string) => sectionTotals[section]?.raw || 0;
 
+  // Get period label for output period
+  const getPeriodLabel = (period: string) => `p${period}`;
+
   const addItem = (section, items) => {
+    // Default to Simple preset, weekly period
+    const simplePreset = presets.find(p => p.name === 'Simple');
     const newItem = {
       name: `Item ${items.length + 1}`,
       active: true,
-      calc: '',
-      res: 0,
+      calc: simplePreset ? simplePreset.calc : '',
+      primaryKey: simplePreset ? simplePreset.primaryVariable : 'quantity',
+      inputPeriod: 'w',
+      preset: 'Simple',
+      cost: simplePreset?.variables.find(v => v.key === 'cost')?.default ?? 0,
+      quantity: simplePreset?.variables.find(v => v.key === 'quantity')?.default ?? 1,
     };
     setBudgetData((prevData) => ({
       ...prevData,
@@ -77,8 +96,12 @@ const BudgetEditor = () => {
   const importantTotal = importantSection ? sectionRawTotal(importantSection[1], 'important') : 0;
   const voluntaryTotal = voluntarySection ? sectionRawTotal(voluntarySection[1], 'voluntary') : 0;
 
-  const leftover = incomeTotal - importantTotal;
-  const finalLeftover = incomeTotal - importantTotal - voluntaryTotal;
+  // Weekly values for color checks
+  const weeklyIncome = incomeSection ? sectionRawTotal(incomeSection[1], 'income') / (periodData[outputPeriod]?.factor || 1) : 0;
+  const weeklyImportant = importantSection ? sectionRawTotal(importantSection[1], 'important') / (periodData[outputPeriod]?.factor || 1) : 0;
+  const weeklyVoluntary = voluntarySection ? sectionRawTotal(voluntarySection[1], 'voluntary') / (periodData[outputPeriod]?.factor || 1) : 0;
+  const leftover = weeklyIncome - weeklyImportant;
+  const finalLeftover = weeklyIncome - weeklyImportant - weeklyVoluntary;
 
   console.log(theme)
 
@@ -198,6 +221,7 @@ const BudgetEditor = () => {
                   drag={drag}
                   isActive={isActive}
                   currency={currency}
+                  outputPeriod={outputPeriod}
                 />
               )}
               onDragEnd={({ data }) => {
@@ -235,7 +259,7 @@ const BudgetEditor = () => {
             <View style={styles.totalValue}>
               <Text>
                 <Text style={[styles.totalValueText, { color: theme.colors.green }]}> {sectionTotal(items, section)}</Text>
-                <Text style={{ color: theme.colors.text }}>pw</Text>
+                <Text style={{ color: theme.colors.text }}>{getPeriodLabel(outputPeriod)}</Text>
               </Text>
             </View>
             {/* Empty options cell */}
@@ -247,7 +271,7 @@ const BudgetEditor = () => {
           {section.toLowerCase() === 'important' && (
             <View style={{ marginBottom: 12, marginTop: 8, marginLeft: 4 }}>
               <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
-                (Leftover: <Text style={{ color: theme.colors.green }}>{formatCurrency(leftover, currency)}</Text>pw)
+                (Leftover: <Text style={{ color: leftover <= 0 ? theme.colors.red : (leftover <= 25 ? theme.colors.orange : (leftover <= 50 ? theme.colors.yellow : theme.colors.green)) }}>{formatCurrency(sectionRawTotal(incomeSection[1], 'income') - sectionRawTotal(importantSection[1], 'important'), currency)}</Text>{getPeriodLabel(outputPeriod)})
               </Text>
             </View>
           )}
@@ -255,7 +279,7 @@ const BudgetEditor = () => {
           {section.toLowerCase() === 'voluntary' && (
             <View style={{ marginBottom: 12, marginTop: 8, marginLeft: 4 }}>
               <Text style={{ fontWeight: 'bold', color: theme.colors.text }}>
-                (Final Leftover: <Text style={{ color: (finalLeftover <= 0 ? theme.colors.red : (finalLeftover <= 25 ? theme.colors.orange : (finalLeftover <= 50 ? theme.colors.yellow : theme.colors.green))) }}>{formatCurrency(finalLeftover, currency)}</Text>pw)
+                (Final Leftover: <Text style={{ color: finalLeftover <= 0 ? theme.colors.red : (finalLeftover <= 25 ? theme.colors.orange : (finalLeftover <= 50 ? theme.colors.yellow : theme.colors.green)) }}>{formatCurrency(sectionRawTotal(incomeSection[1], 'income') - sectionRawTotal(importantSection[1], 'important') - sectionRawTotal(voluntarySection[1], 'voluntary'), currency)}</Text>{getPeriodLabel(outputPeriod)})
               </Text>
             </View>
           )}

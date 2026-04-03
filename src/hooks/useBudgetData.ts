@@ -1,4 +1,4 @@
-import {useState, useEffect, useRef} from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type BudgetData = {
@@ -6,6 +6,7 @@ type BudgetData = {
     title: string;
     currency: string;
     theme: string;
+    outputPeriod: string;
   };
   income: any[];
   important: any[];
@@ -14,94 +15,157 @@ type BudgetData = {
 
 export const initialData: BudgetData = {
   settings: {
-    title: 'Example Budget',
-    currency: 'en-US/USD',
-    theme: 'dark',
+    title: "Example Budget",
+    currency: "en-US/USD",
+    theme: "dark",
+    outputPeriod: "w"
   },
   income: [
     {
-      name: 'Work',
-      calc: '{{$payRate}}ph * {{hoursPerDay}}h * {{daysPerWeek}}d = {{$grossPay = payRate * hoursPerDay * daysPerWeek}}pw (gross) or ~{{$res = grossPay * netMult + netAdd}}pw (net)',
-      primaryKey: 'daysPerWeek',
-      inputPeriod: 'w',
+      name: "Work",
       active: true,
-      payRate: 25,
-      hoursPerDay: 8.5,
-      daysPerWeek: 4,
-      netMult: 0.777,
-      netAdd: 21,
+      preset: "Wage",
+      payRate: 35,
+      hoursPerDay: 7.5,
+      daysPerPeriod: 4,
+      taxRate: 0.2005,
+      inputPeriod: "w",
+      primaryKey: "daysPerPeriod",
+      calc: "{{$payRate}}ph * {{hoursPerDay}}h * {{daysPerPeriod}}d = {{$grossPay = payRate * hoursPerDay * daysPerPeriod}}p/p/ (gross) or ~{{$res = grossPay * (1 - taxRate)}}p/p/ (net)"
     },
     {
-      name: 'Benefit',
-      calc: '{{$res}}pw',
+      name: "Benefit",
       active: false,
-      primaryKey: 'res',
-      inputPeriod: 'w',
-      res: 146.87,
-    },
+      preset: "Simple",
+      cost: 146.87,
+      quantity: 1,
+      inputPeriod: "w",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
+    }
   ],
   important: [
     {
-      name: 'Rent',
-      calc: '{{$res}}pw',
+      name: "Rent",
       active: true,
-      primaryKey: 'res',
-      inputPeriod: 'w',
-      res: 320,
+      preset: "Simple",
+      cost: 385,
+      quantity: 1,
+      inputPeriod: "w",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
     },
     {
-      name: 'Bus Costs',
-      calc: '{{$tripCost = tripCost * concessionMult}}pt * {{tripsPerDay}}t * {{daysPerWeek}}d = {{$res = tripCost * tripsPerDay * daysPerWeek}}pw (overestimate)',
+      name: "Bus Costs",
       active: true,
-      primaryKey: 'daysPerWeek',
-      inputPeriod: 'w',
-      tripCost: 2.1,
-      concessionMult: 0.5,
-      tripsPerDay: 2,
-      daysPerWeek: 2,
+      preset: "Public Transport",
+      costPerTrip: 2.16,
+      concessionMultiplier: 1,
+      tripsPerPeriod: 8,
+      inputPeriod: "w",
+      primaryKey: "tripsPerPeriod",
+      calc: "{{$costPerTrip = costPerTrip * concessionMultiplier}}pt * {{tripsPerPeriod}}t = {{$res = costPerTrip * tripsPerPeriod}}p/p/"
     },
     {
-      name: 'Phone',
-      calc: '~{{$monthlyCost}}pm * 12m / 52w = {{$weeklyCost = (monthlyCost * 12) / 52}}pw ~= {{$res = Math.ceil(weeklyCost / roundConst) * roundConst}}pw (rounded up just in case)',
+      name: "Car Insurance",
       active: true,
-      primaryKey: 'monthlyCost',
-      inputPeriod: 'w',
-      monthlyCost: 3,
-      roundConst: 0.5,
+      preset: "Simple",
+      cost: 21.83,
+      quantity: 0.5,
+      inputPeriod: "f",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
     },
     {
-      name: 'Annual Debit Card Fee',
-      calc: '{{$yearlyCost}}py / 52w = {{$res = yearlyCost / 52}}pw (overestimate)',
+      name: "GitHub",
       active: true,
-      primaryKey: 'yearlyCost',
-      inputPeriod: 'w',
-      yearlyCost: 10,
+      preset: "Simple",
+      cost: 177.89,
+      quantity: 0.019165349048919554,
+      inputPeriod: "y",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
     },
+    {
+      name: "Car Rego",
+      active: true,
+      preset: "Simple",
+      cost: 144.22,
+      quantity: 0.019165349048919554,
+      inputPeriod: "y",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
+    },
+    {
+      name: "Haircuts",
+      active: true,
+      preset: "Simple",
+      cost: 35,
+      quantity: 0.07666139619567822,
+      inputPeriod: "y",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
+    },
+    {
+      name: "Domain",
+      active: true,
+      preset: "Simple",
+      cost: 42.5,
+      quantity: 0.019165349048919554,
+      inputPeriod: "y",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
+    },
+    {
+      name: "Phone",
+      active: true,
+      preset: "Simple",
+      cost: 3,
+      quantity: 0.22998418858703468,
+      inputPeriod: "m",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
+    },
+    {
+      name: "Annual Debit Card Fee",
+      active: true,
+      preset: "Simple",
+      cost: 10,
+      quantity: 0.019165349048919554,
+      inputPeriod: "y",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
+    }
   ],
   voluntary: [
     {
-      name: 'Savings',
-      calc: '{{$res}}pw',
+      name: "Mortgage",
       active: true,
-      primaryKey: 'res',
-      inputPeriod: 'w',
-      res: 50,
+      preset: "Simple",
+      cost: 270,
+      quantity: 1,
+      inputPeriod: "w",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
     },
     {
-      name: 'Pay Debt',
-      calc: '{{$res}}pw',
+      name: "Savings",
       active: true,
-      primaryKey: 'res',
-      inputPeriod: 'w',
-      res: 100,
-    },
-  ],
-};
+      preset: "Simple",
+      cost: 10,
+      quantity: 1,
+      inputPeriod: "w",
+      primaryKey: "quantity",
+      calc: "{{$cost}} * {{quantity}}p/p/ = {{$res = cost * quantity}}p/p/"
+    }
+  ]
+}
 
 const useBudgetData = () => {
   const [budgetData, initBudgetData] = useState<BudgetData | null>(null);
   const toSave = useRef(false);
 
+  console.log(budgetData);
   const setBudgetData = (data: BudgetData) => {
     toSave.current = true;
     initBudgetData(data);
@@ -141,7 +205,7 @@ const useBudgetData = () => {
     }
   };
 
-  return {budgetData, setBudgetData};
+  return { budgetData, setBudgetData };
 };
 
 export default useBudgetData;

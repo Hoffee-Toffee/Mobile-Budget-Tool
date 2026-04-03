@@ -1,6 +1,6 @@
 import { View, Text, ScrollView } from 'react-native';
 import { periodData as rawPeriodData } from '../utils/formatters';
-import { presets, Preset } from '../utils/presets';
+import { presets } from '../utils/presets';
 import { Modal, Portal, TextInput, IconButton, Button, Dialog, Paragraph, Menu } from 'react-native-paper';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTheme } from './ThemeProvider';
@@ -50,12 +50,10 @@ const CalculationEditor = ({
   const [showInputPeriodMenu, setShowInputPeriodMenu] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState(item.preset || 'Custom');
   const [menuVisible, setMenuVisible] = useState(false);
-  const primaryKeyButtonRef = useRef(null);
-  const inputPeriodButtonRef = useRef(null);
   const theme = useTheme();
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
-  const [editingValue, setEditingValue] = useState<string | null>(null);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
+    // Output period state
   // Variables state
   const [variables, setVariables] = useState<Variable[]>(
     Object.entries(item)
@@ -465,50 +463,52 @@ const CalculationEditor = ({
                   </Menu>
                 </View>
               </View>
-              {/* Primary Variable Dropdown */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ width: 110, color: theme.colors.text }}>Primary Variable:</Text>
-                <View style={{ flex: 1 }}>
-                  <Menu
-                    visible={showPrimaryKeyMenu}
-                    onDismiss={() => setShowPrimaryKeyMenu(false)}
-                    anchor={
-                      <Button
-                        mode="outlined"
-                        onPress={() => setShowPrimaryKeyMenu(true)}
-                        style={{ borderRadius: 5, height: 50, width: '100%', backgroundColor: theme.colors.background, borderColor: theme.colors.border, borderWidth: 1 }}
-                        contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', height: 50 }}
-                        labelStyle={{ marginLeft: 10, color: theme.colors.text, fontWeight: 'bold', flex: 1, textAlign: 'left' }}
-                        icon={() => (
-                          <View style={{ marginRight: -10, transform: [{ rotate: showPrimaryKeyMenu ? '180deg' : '0deg' }] }}>
-                            <IconButton icon="chevron-down" size={20} style={{ margin: 0, padding: 0 }} />
-                          </View>
-                        )}
-                        textColor={theme.colors.text}
-                      >
-                        {item.primaryKey || 'Select variable'}
-                      </Button>
-                    }
-                    style={{ width: 150, marginTop: 45, backgroundColor: theme.colors.background }}
-                    contentStyle={{ backgroundColor: theme.colors.background }}
-                  >
-                    {variables.map((v) => (
-                      <Menu.Item
-                        key={v.name}
-                        onPress={() => {
-                          setItemProp('primaryKey', v.name);
-                          setShowPrimaryKeyMenu(false);
-                        }}
-                        title={v.name}
-                        titleStyle={{ color: theme.colors.text }}
-                        style={{ backgroundColor: theme.colors.background }}
-                      />
-                    ))}
-                  </Menu>
+              {/* Primary Variable Dropdown (only show for Custom preset) */}
+              {selectedPreset === 'Custom' && (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ width: 110, color: theme.colors.text }}>Primary Variable:</Text>
+                  <View style={{ flex: 1 }}>
+                    <Menu
+                      visible={showPrimaryKeyMenu}
+                      onDismiss={() => setShowPrimaryKeyMenu(false)}
+                      anchor={
+                        <Button
+                          mode="outlined"
+                          onPress={() => setShowPrimaryKeyMenu(true)}
+                          style={{ borderRadius: 5, height: 50, width: '100%', backgroundColor: theme.colors.background, borderColor: theme.colors.border, borderWidth: 1 }}
+                          contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', height: 50 }}
+                          labelStyle={{ marginLeft: 10, color: theme.colors.text, fontWeight: 'bold', flex: 1, textAlign: 'left' }}
+                          icon={() => (
+                            <View style={{ marginRight: -10, transform: [{ rotate: showPrimaryKeyMenu ? '180deg' : '0deg' }] }}>
+                              <IconButton icon="chevron-down" size={20} style={{ margin: 0, padding: 0 }} />
+                            </View>
+                          )}
+                          textColor={theme.colors.text}
+                        >
+                          {item.primaryKey || 'Select variable'}
+                        </Button>
+                      }
+                      style={{ width: 150, marginTop: 45, backgroundColor: theme.colors.background }}
+                      contentStyle={{ backgroundColor: theme.colors.background }}
+                    >
+                      {variables.map((v) => (
+                        <Menu.Item
+                          key={v.name}
+                          onPress={() => {
+                            setItemProp('primaryKey', v.name);
+                            setShowPrimaryKeyMenu(false);
+                          }}
+                          title={v.name}
+                          titleStyle={{ color: theme.colors.text }}
+                          style={{ backgroundColor: theme.colors.background }}
+                        />
+                      ))}
+                    </Menu>
+                  </View>
                 </View>
-              </View>
+              )}
             {/* Variables Table */}
-            <Text style={{ fontWeight: 'bold', marginBottom: 4, color: theme.colors.text }}>Variables</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 12, color: theme.colors.text }}>Variables</Text>
             {selectedPreset !== 'Custom' ? (
               // Show preset variables, name not editable, value editable
               (() => {
@@ -639,7 +639,7 @@ const CalculationEditor = ({
             {/* Calculation Field only for Custom preset */}
             {selectedPreset === 'Custom' && (
               <>
-                <Text style={{ fontWeight: 'bold', marginTop: 12, color: theme.colors.text }}>Calculation</Text>
+                <Text style={{ fontWeight: 'bold', fontSize: 16, marginTop: 12, marginBottom: 12, color: theme.colors.text }}>Calculation</Text>
                 <TextInput
                   defaultValue={calcTextInputRef.current}
                   onChangeText={text => {
@@ -658,6 +658,7 @@ const CalculationEditor = ({
                 </Text>
               </>
             )}
+
             {/* Modal Actions */}
             <View style={styles.modalActions}>
               <Button onPress={onDismiss}>Cancel</Button>
